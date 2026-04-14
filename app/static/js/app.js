@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSearch();
   initControls();
   initAudio();
+  initWatchlist();
 });
 
 // ---- Chart Setup ----
@@ -102,6 +103,9 @@ async function loadTicker(ticker) {
     fetch(`${API}/api/quote/${ticker}`).then(r => r.json()).catch(() => null),
     fetch(`${API}/api/history/${ticker}?period=${currentPeriod}&interval=${currentInterval}`).then(r => r.json()).catch(() => null),
   ]);
+
+  updateFavBtn();
+  renderWatchlist();
 
   if (quoteRes && !quoteRes.error) {
     renderQuote(quoteRes);
@@ -476,6 +480,76 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// ---- Watchlist ----
+function getWatchlist() {
+  try { return JSON.parse(localStorage.getItem('kronos_watchlist') || '[]'); } catch { return []; }
+}
+function saveWatchlist(list) {
+  localStorage.setItem('kronos_watchlist', JSON.stringify(list));
+}
+function isInWatchlist(sym) {
+  return getWatchlist().some(w => w.symbol === sym);
+}
+function toggleWatchlist() {
+  const list = getWatchlist();
+  const idx = list.findIndex(w => w.symbol === currentTicker);
+  if (idx >= 0) {
+    list.splice(idx, 1);
+  } else {
+    const name = document.getElementById('tickerName').textContent || '';
+    list.push({ symbol: currentTicker, name });
+  }
+  saveWatchlist(list);
+  updateFavBtn();
+  renderWatchlist();
+}
+function updateFavBtn() {
+  const btn = document.getElementById('favBtn');
+  btn.classList.toggle('active', isInWatchlist(currentTicker));
+}
+function renderWatchlist() {
+  const list = getWatchlist();
+  const section = document.getElementById('watchlistSection');
+  const container = document.getElementById('watchlistItems');
+  if (list.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  container.innerHTML = list.map(w => `
+    <div class="watchlist-item ${w.symbol === currentTicker ? 'current' : ''}" data-sym="${w.symbol}">
+      <span class="wl-sym">${w.symbol}</span>
+      <span class="wl-name">${w.name}</span>
+      <button class="wl-remove" data-sym="${w.symbol}" title="Remove">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.watchlist-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.wl-remove')) return;
+      loadTicker(el.dataset.sym);
+    });
+  });
+  container.querySelectorAll('.wl-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sym = btn.dataset.sym;
+      const list = getWatchlist().filter(w => w.symbol !== sym);
+      saveWatchlist(list);
+      updateFavBtn();
+      renderWatchlist();
+    });
+  });
+}
+
+function initWatchlist() {
+  document.getElementById('favBtn').addEventListener('click', toggleWatchlist);
+  updateFavBtn();
+  renderWatchlist();
+}
 
 // ---- Audio ----
 function initAudio() {

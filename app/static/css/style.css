@@ -308,6 +308,77 @@ body {
 .ticker-change.up { color: var(--green); background: rgba(74,222,128,0.1); }
 .ticker-change.down { color: var(--red); background: rgba(248,113,113,0.1); }
 
+/* ---- Favorite Button ---- */
+.ticker-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fav-btn {
+  background: none; border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex; align-items: center;
+}
+.fav-btn:hover { color: var(--gold); transform: scale(1.15); }
+.fav-btn.active svg {
+  fill: var(--gold);
+  stroke: var(--gold);
+  filter: drop-shadow(0 0 4px var(--gold-dim));
+}
+
+/* ---- Watchlist ---- */
+.watchlist-section {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.watchlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.watchlist-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 8px;
+}
+.watchlist-item:hover { background: rgba(255,255,255,0.04); }
+.watchlist-item.current { background: rgba(142,202,230,0.06); }
+.wl-sym {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 55px;
+}
+.wl-name {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wl-remove {
+  background: none; border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 2px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  display: flex;
+}
+.watchlist-item:hover .wl-remove { opacity: 1; }
+.wl-remove:hover { color: var(--red); }
+
 .ticker-stats {
   display: flex;
   flex-direction: column;
