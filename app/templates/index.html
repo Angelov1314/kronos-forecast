@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kronos — Financial Forecasting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <!-- TradingView Lightweight Charts -->
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <!-- Background Video -->
+  <div class="video-bg">
+    <video autoplay muted loop playsinline id="bgVideo">
+      <source src="/media/bg.mp4" type="video/mp4">
+    </video>
+    <audio id="bgAudio" loop preload="auto">
+      <source src="/static/media/bgm.mp3" type="audio/mpeg">
+    </audio>
+    <div class="video-overlay"></div>
+  </div>
+
+  <!-- Ambient Audio Toggle -->
+  <button class="glass-pill audio-toggle" id="audioToggle" title="Toggle ambient sound">
+    <svg id="audioIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+      <path class="audio-wave" d="M15.54 8.46a5 5 0 010 7.07"/>
+      <path class="audio-wave" d="M19.07 4.93a10 10 0 010 14.14"/>
+    </svg>
+  </button>
+
+  <!-- Main Layout -->
+  <div class="app-shell">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="logo-group">
+        <div class="logo-mark">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="14" stroke="url(#g1)" stroke-width="1.5"/>
+            <path d="M16 6v20M10 10l6 6 6-6M10 22l6-6 6 6" stroke="url(#g1)" stroke-width="1.2" stroke-linecap="round"/>
+            <defs><linearGradient id="g1" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#8ecae6"/><stop offset="1" stop-color="#e0c97f"/></linearGradient></defs>
+          </svg>
+        </div>
+        <span class="logo-text">KRONOS</span>
+        <span class="logo-sub">FORECAST</span>
+      </div>
+      <div class="search-area">
+        <div class="search-box liquid-glass">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="searchInput" placeholder="Search ticker... AAPL, BTC-USD, TSLA" autocomplete="off" spellcheck="false">
+          <kbd class="kbd-hint">/</kbd>
+        </div>
+        <div class="search-dropdown liquid-glass" id="searchDropdown"></div>
+      </div>
+      <div class="top-actions">
+        <button class="glass-pill" id="btnPredict" title="Run Kronos Prediction">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span>Predict</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Grid -->
+    <main class="content-grid">
+      <!-- Ticker Info Panel -->
+      <section class="panel ticker-panel liquid-glass" id="tickerPanel">
+        <div class="ticker-header">
+          <div>
+            <h1 class="ticker-symbol" id="tickerSymbol">AAPL</h1>
+            <p class="ticker-name" id="tickerName">Apple Inc.</p>
+          </div>
+          <div class="ticker-price-group">
+            <span class="ticker-price" id="tickerPrice">—</span>
+            <span class="ticker-change" id="tickerChange">—</span>
+          </div>
+        </div>
+        <div class="ticker-stats" id="tickerStats">
+          <div class="stat"><span class="stat-label">Vol</span><span class="stat-value" id="statVol">—</span></div>
+          <div class="stat"><span class="stat-label">Mkt Cap</span><span class="stat-value" id="statCap">—</span></div>
+          <div class="stat"><span class="stat-label">52w H</span><span class="stat-value" id="stat52H">—</span></div>
+          <div class="stat"><span class="stat-label">52w L</span><span class="stat-value" id="stat52L">—</span></div>
+          <div class="stat"><span class="stat-label">Sector</span><span class="stat-value" id="statSector">—</span></div>
+        </div>
+      </section>
+
+      <!-- Chart Panel -->
+      <section class="panel chart-panel liquid-glass">
+        <div class="chart-toolbar">
+          <div class="period-tabs">
+            <button class="period-btn active" data-period="1mo" data-interval="1d">1M</button>
+            <button class="period-btn" data-period="3mo" data-interval="1d">3M</button>
+            <button class="period-btn" data-period="6mo" data-interval="1d">6M</button>
+            <button class="period-btn" data-period="1y" data-interval="1d">1Y</button>
+            <button class="period-btn" data-period="2y" data-interval="1d">2Y</button>
+            <button class="period-btn" data-period="5y" data-interval="1wk">5Y</button>
+          </div>
+          <div class="chart-indicators">
+            <span class="indicator-badge" id="predBadge" style="display:none">
+              <span class="pulse-dot"></span> Kronos Forecast Active
+            </span>
+          </div>
+        </div>
+        <div id="chartContainer" class="chart-container"></div>
+        <div class="chart-watermark">KRONOS</div>
+      </section>
+
+      <!-- Prediction Panel -->
+      <section class="panel predict-panel liquid-glass" id="predictPanel">
+        <h3 class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Kronos Forecast
+        </h3>
+        <div class="predict-config">
+          <label class="config-row">
+            <span>Horizon</span>
+            <div class="range-group">
+              <input type="range" id="predLen" min="5" max="60" value="30" class="glass-range">
+              <span class="range-val" id="predLenVal">30d</span>
+            </div>
+          </label>
+          <label class="config-row">
+            <span>Model</span>
+            <select id="modelSelect" class="glass-select">
+              <option value="small">Kronos-small (24.7M)</option>
+              <option value="mini">Kronos-mini (4.1M)</option>
+              <option value="base">Kronos-base (102.3M)</option>
+            </select>
+          </label>
+        </div>
+        <button class="predict-btn liquid-glass" id="runPredict">
+          <span class="predict-btn-text">Generate Forecast</span>
+          <div class="predict-loader" id="predictLoader" style="display:none">
+            <div class="loader-ring"></div>
+          </div>
+        </button>
+        <div class="predict-result" id="predictResult"></div>
+      </section>
+
+      <!-- Backtest Panel -->
+      <section class="panel backtest-panel liquid-glass" id="backtestPanel">
+        <h3 class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12a9 9 0 109-9"/><path d="M3 3v4h4"/><path d="M12 7v5l3 3"/></svg>
+          Backtest
+        </h3>
+        <p class="backtest-desc">Pick a cutoff date. Model sees only data before it, then predicts forward. Compare with reality.</p>
+        <div class="predict-config">
+          <label class="config-row">
+            <span>Cutoff Date</span>
+            <input type="date" id="backtestCutoff" class="glass-input">
+          </label>
+          <label class="config-row">
+            <span>Predict Forward</span>
+            <div class="range-group">
+              <input type="range" id="backtestLen" min="5" max="60" value="30" class="glass-range">
+              <span class="range-val" id="backtestLenVal">30d</span>
+            </div>
+          </label>
+        </div>
+        <button class="predict-btn liquid-glass" id="runBacktest">
+          <span class="predict-btn-text">Run Backtest</span>
+          <div class="predict-loader" id="backtestLoader" style="display:none">
+            <div class="loader-ring"></div>
+          </div>
+        </button>
+        <div class="backtest-result" id="backtestResult"></div>
+      </section>
+
+      <!-- Trending Panel -->
+      <section class="panel trending-panel liquid-glass">
+        <h3 class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+          Trending
+        </h3>
+        <div class="trending-list" id="trendingList">
+          <div class="trending-placeholder">Loading...</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

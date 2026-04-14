@@ -74,3 +74,10 @@ venv.bak/
 temp/
 tmp/
 .python-version
+
+# App media (user provides their own)
+app/static/media/bg.mp4
+app/static/media/bgm.mp3
+
+# Claude
+.claude/

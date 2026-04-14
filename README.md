@@ -82,7 +82,37 @@ We release a family of pre-trained models with varying capacities to suit differ
 | Kronos-large | [Kronos-Tokenizer-base](https://huggingface.co/NeoQuasar/Kronos-Tokenizer-base) | 512            | 499.2M | ❌                                                                         |
 
 
-## 🚀 Getting Started
+## 🌐 Web App (Liquid Glass UI)
+
+A premium financial forecasting web app with real-time market data, interactive candlestick charts, AI predictions, and backtesting — all wrapped in a cinematic liquid glass interface.
+
+### Quick Start
+
+```bash
+git clone https://github.com/Angelov1314/kronos-forecast.git
+cd kronos-forecast
+pip install -r requirements.txt
+pip install yfinance flask flask-cors
+
+# (Optional) Add your own background video & music
+# cp your-video.mp4 app/static/media/bg.mp4
+# cp your-music.mp3 app/static/media/bgm.mp3
+
+python server.py
+# Open http://localhost:5177
+```
+
+### Features
+- **Live Market Data** — Real-time quotes & OHLCV via yfinance (any ticker)
+- **Candlestick Charts** — TradingView Lightweight Charts with volume bars
+- **Kronos AI Forecast** — Generate future K-line predictions with adjustable horizon
+- **Backtest** — Pick a cutoff date, model only sees data before it, compare prediction vs reality with MAE & direction accuracy metrics
+- **Liquid Glass UI** — Frosted glassmorphism panels over fullscreen background video with ambient music
+- **Ticker Search** — Search any stock/crypto/ETF, keyboard shortcut `/`
+
+---
+
+## 🚀 Getting Started (Model API)
 
 ### Installation
 
