@@ -583,6 +583,35 @@ body {
   grid-column: 3;
   grid-row: 3;
 }
+.trending-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.market-toggle {
+  display: flex;
+  gap: 2px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  padding: 2px;
+}
+.market-btn {
+  background: none; border: none;
+  color: var(--text-tertiary);
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.market-btn:hover { color: var(--text-secondary); }
+.market-btn.active {
+  color: var(--ice);
+  background: rgba(142,202,230,0.1);
+}
 .trending-list {
   display: flex;
   flex-direction: column;

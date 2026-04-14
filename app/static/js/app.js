@@ -119,10 +119,15 @@ async function loadTicker(ticker) {
   }
 }
 
+function isCNTicker(sym) {
+  return /^\d{6}(\.(SH|SZ|BJ))?$/.test(sym);
+}
+
 function renderQuote(q) {
   document.getElementById('tickerSymbol').textContent = q.symbol;
   document.getElementById('tickerName').textContent = q.name || '';
-  document.getElementById('tickerPrice').textContent = formatPrice(q.price, q.currency);
+  const prefix = q.currency === 'CNY' ? '¥' : '$';
+  document.getElementById('tickerPrice').textContent = `${prefix}${Number(q.price).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
 
   const chgEl = document.getElementById('tickerChange');
   const pct = q.changePct || 0;
@@ -429,19 +434,25 @@ async function runBacktest() {
 }
 
 // ---- Trending ----
-async function loadTrending() {
+let currentMarket = 'us';
+
+async function loadTrending(market) {
+  if (market) currentMarket = market;
   const el = document.getElementById('trendingList');
+  el.innerHTML = '<div class="trending-placeholder">Loading...</div>';
   try {
-    const res = await fetch(`${API}/api/trending`).then(r => r.json());
+    const res = await fetch(`${API}/api/trending?market=${currentMarket}`).then(r => r.json());
+    const isCN = currentMarket === 'cn';
     el.innerHTML = res.map(t => {
       const pct = t.changePct || 0;
       const sign = pct >= 0 ? '+' : '';
       const cls = pct >= 0 ? 'up' : 'down';
+      const price = isCN ? `¥${Number(t.price).toFixed(2)}` : formatPrice(t.price);
       return `
         <div class="trending-item" data-sym="${t.symbol}">
           <span class="trending-sym">${t.symbol}</span>
           <span class="trending-name">${t.name}</span>
-          <span class="trending-price">${formatPrice(t.price)}</span>
+          <span class="trending-price">${price}</span>
           <span class="trending-chg ${cls}">${sign}${pct.toFixed(2)}%</span>
         </div>
       `;
@@ -454,6 +465,17 @@ async function loadTrending() {
     el.innerHTML = '<div class="trending-placeholder">Failed to load</div>';
   }
 }
+
+// Market toggle buttons
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.market-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.market-btn.active')?.classList.remove('active');
+      btn.classList.add('active');
+      loadTrending(btn.dataset.market);
+    });
+  });
+});
 
 // ---- Audio ----
 function initAudio() {

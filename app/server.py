@@ -1,6 +1,6 @@
 """
 Kronos — Financial Forecasting Web App
-Flask backend: yfinance data + Kronos model predictions
+Flask backend: yfinance + akshare (A-share) data + Kronos model predictions
 """
 
 import sys, os
@@ -9,9 +9,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_cors import CORS
 import yfinance as yf
+import akshare as ak
 import pandas as pd
 import numpy as np
-import json
+import json, re
 from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
@@ -33,6 +34,113 @@ def get_predictor():
             print(f"[Kronos] Model load failed: {e}")
     return _predictor
 
+# ---------- A-Share Helpers ----------
+_CN_STOCK_CACHE = {}
+
+def is_cn_ticker(ticker):
+    """Check if ticker is a Chinese A-share code (6-digit or with .SH/.SZ suffix)."""
+    t = ticker.upper().strip()
+    return bool(re.match(r'^\d{6}(\.(SH|SZ|BJ))?$', t))
+
+def normalize_cn_ticker(ticker):
+    """Normalize to bare 6-digit code."""
+    return re.sub(r'\.(SH|SZ|BJ)$', '', ticker.upper().strip())
+
+def get_cn_quote(code):
+    """Get quote for a CN stock using recent history (fast)."""
+    try:
+        start = (datetime.now() - timedelta(days=10)).strftime('%Y%m%d')
+        end = datetime.now().strftime('%Y%m%d')
+        df = ak.stock_zh_a_hist(symbol=code, period='daily', start_date=start, end_date=end, adjust='qfq')
+        if df.empty:
+            return None
+        last = df.iloc[-1]
+        prev = df.iloc[-2] if len(df) >= 2 else last
+        price = float(last['收盘'])
+        prev_close = float(prev['收盘'])
+        change = price - prev_close
+        pct = (change / prev_close * 100) if prev_close else 0
+
+        # Try to get name from search cache
+        name = _CN_STOCK_CACHE.get(code, code)
+
+        return {
+            'symbol': code,
+            'name': name,
+            'price': price,
+            'change': round(change, 2),
+            'changePct': round(pct, 2),
+            'volume': int(last.get('成交量', 0)),
+            'marketCap': 0,
+            'high52w': 0,
+            'low52w': 0,
+            'sector': 'A股',
+            'currency': 'CNY',
+        }
+    except Exception as e:
+        print(f"[CN Quote Error] {e}")
+        return None
+
+def get_cn_history(code, period='6mo', interval='1d'):
+    """Get OHLCV history for a CN stock via akshare."""
+    try:
+        # Calculate start date from period
+        period_map = {'1mo': 30, '3mo': 90, '6mo': 180, '1y': 365, '2y': 730, '5y': 1825}
+        days = period_map.get(period, 180)
+        start = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
+        end = datetime.now().strftime('%Y%m%d')
+
+        if interval in ('1d', '1wk'):
+            df = ak.stock_zh_a_hist(symbol=code, period='daily', start_date=start, end_date=end, adjust='qfq')
+            if interval == '1wk':
+                df['日期'] = pd.to_datetime(df['日期'])
+                df = df.set_index('日期').resample('W').agg({
+                    '开盘': 'first', '最高': 'max', '最低': 'min', '收盘': 'last', '成交量': 'sum'
+                }).dropna().reset_index()
+                df.rename(columns={'日期': '日期'}, inplace=True)
+        else:
+            df = ak.stock_zh_a_hist(symbol=code, period='daily', start_date=start, end_date=end, adjust='qfq')
+
+        records = []
+        for _, row in df.iterrows():
+            ts = pd.to_datetime(row['日期'])
+            records.append({
+                'time': int(ts.timestamp()),
+                'open': round(float(row['开盘']), 4),
+                'high': round(float(row['最高']), 4),
+                'low': round(float(row['最低']), 4),
+                'close': round(float(row['收盘']), 4),
+                'volume': int(row['成交量']),
+            })
+        return records
+    except Exception as e:
+        print(f"[CN History Error] {e}")
+        return None
+
+def search_cn_stocks(query):
+    """Search A-share stocks by code or name using curated list + akshare lookup."""
+    # Curated popular stocks for fast matching
+    _POPULAR_CN = {
+        '600519': '贵州茅台', '000858': '五粮液', '601318': '中国平安', '300750': '宁德时代',
+        '600036': '招商银行', '000001': '平安银行', '601012': '隆基绿能', '002594': '比亚迪',
+        '600900': '长江电力', '601166': '兴业银行', '000333': '美的集团', '600276': '恒瑞医药',
+        '002475': '立讯精密', '601398': '工商银行', '600887': '伊利股份', '000651': '格力电器',
+        '300059': '东方财富', '002415': '海康威视', '600030': '中信证券', '601888': '中国中免',
+        '603259': '药明康德', '002304': '洋河股份', '601899': '紫金矿业', '600809': '山西汾酒',
+        '002714': '牧原股份', '300760': '迈瑞医疗', '601668': '中国建筑', '600050': '中国联通',
+        '601288': '农业银行', '600309': '万华化学', '002352': '顺丰控股', '000725': '京东方A',
+    }
+    _POPULAR_CN.update(_CN_STOCK_CACHE)
+
+    results = []
+    q = query.upper()
+    for code, name in _POPULAR_CN.items():
+        if q in code or q in name:
+            results.append({'symbol': code, 'name': name, 'type': 'A股', 'exchange': 'SH' if code.startswith('6') else 'SZ'})
+        if len(results) >= 8:
+            break
+    return results
+
 # ---------- Routes ----------
 
 @app.route('/')
@@ -43,6 +151,13 @@ def index():
 def get_quote(ticker):
     """Get current quote snapshot for a ticker."""
     try:
+        if is_cn_ticker(ticker):
+            code = normalize_cn_ticker(ticker)
+            q = get_cn_quote(code)
+            if q:
+                return jsonify(q)
+            return jsonify({'error': 'A股代码未找到'}), 404
+
         t = yf.Ticker(ticker)
         info = t.info
         fast = t.fast_info
@@ -68,6 +183,13 @@ def get_history(ticker):
     period = request.args.get('period', '6mo')
     interval = request.args.get('interval', '1d')
     try:
+        if is_cn_ticker(ticker):
+            code = normalize_cn_ticker(ticker)
+            records = get_cn_history(code, period, interval)
+            if records:
+                return jsonify({'symbol': code, 'data': records})
+            return jsonify({'error': 'A股数据获取失败'}), 404
+
         t = yf.Ticker(ticker)
         df = t.history(period=period, interval=interval)
         if df.empty:
@@ -121,6 +243,12 @@ def search_tickers():
             except:
                 pass
 
+        # Search A-shares if query looks Chinese or numeric
+        cn_results = search_cn_stocks(q)
+        for r in cn_results:
+            if not any(x['symbol'] == r['symbol'] for x in results):
+                results.append(r)
+
         # Supplement with popular tickers if few results
         if len(results) < 4:
             popular = {
@@ -149,23 +277,32 @@ def predict(ticker):
 
     try:
         # Fetch historical data
-        t = yf.Ticker(ticker)
-        df = t.history(period=period, interval=interval)
-        if len(df) < 60:
-            return jsonify({'error': 'Not enough historical data'}), 400
+        if is_cn_ticker(ticker):
+            code = normalize_cn_ticker(ticker)
+            records = get_cn_history(code, period, interval)
+            if not records or len(records) < 60:
+                return jsonify({'error': '历史数据不足'}), 400
+            df = pd.DataFrame(records)
+            df['timestamps'] = pd.to_datetime(df['time'], unit='s')
+        else:
+            t = yf.Ticker(ticker)
+            df = t.history(period=period, interval=interval)
+            if len(df) < 60:
+                return jsonify({'error': 'Not enough historical data'}), 400
 
         predictor = get_predictor()
         if predictor is None:
             return jsonify({'error': 'Model not loaded. Check server logs.'}), 500
 
-        # Prepare input
-        df = df.reset_index()
-        df.columns = [c.lower() for c in df.columns]
-        if 'date' in df.columns:
-            df = df.rename(columns={'date': 'timestamps'})
-        elif 'datetime' in df.columns:
-            df = df.rename(columns={'datetime': 'timestamps'})
-        df['timestamps'] = pd.to_datetime(df['timestamps'])
+        # Prepare input — normalize column names
+        if not is_cn_ticker(ticker):
+            df = df.reset_index()
+            df.columns = [c.lower() for c in df.columns]
+            if 'date' in df.columns:
+                df = df.rename(columns={'date': 'timestamps'})
+            elif 'datetime' in df.columns:
+                df = df.rename(columns={'datetime': 'timestamps'})
+            df['timestamps'] = pd.to_datetime(df['timestamps'])
 
         lookback = min(len(df), 400)
         x_df = df.iloc[-lookback:][['open', 'high', 'low', 'close', 'volume']].copy()
@@ -227,18 +364,25 @@ def backtest(ticker):
         cutoff_dt = pd.to_datetime(cutoff)
 
         # Fetch full historical data
-        t = yf.Ticker(ticker)
-        df = t.history(period=period, interval=interval)
-        if len(df) < 60:
-            return jsonify({'error': 'Not enough historical data'}), 400
-
-        df = df.reset_index()
-        df.columns = [c.lower() for c in df.columns]
-        if 'date' in df.columns:
-            df = df.rename(columns={'date': 'timestamps'})
-        elif 'datetime' in df.columns:
-            df = df.rename(columns={'datetime': 'timestamps'})
-        df['timestamps'] = pd.to_datetime(df['timestamps']).dt.tz_localize(None)
+        if is_cn_ticker(ticker):
+            code = normalize_cn_ticker(ticker)
+            records = get_cn_history(code, period, interval)
+            if not records or len(records) < 60:
+                return jsonify({'error': '历史数据不足'}), 400
+            df = pd.DataFrame(records)
+            df['timestamps'] = pd.to_datetime(df['time'], unit='s')
+        else:
+            t = yf.Ticker(ticker)
+            df = t.history(period=period, interval=interval)
+            if len(df) < 60:
+                return jsonify({'error': 'Not enough historical data'}), 400
+            df = df.reset_index()
+            df.columns = [c.lower() for c in df.columns]
+            if 'date' in df.columns:
+                df = df.rename(columns={'date': 'timestamps'})
+            elif 'datetime' in df.columns:
+                df = df.rename(columns={'datetime': 'timestamps'})
+            df['timestamps'] = pd.to_datetime(df['timestamps']).dt.tz_localize(None)
 
         # Split at cutoff
         mask_before = df['timestamps'] <= cutoff_dt
@@ -342,21 +486,44 @@ def backtest(ticker):
 @app.route('/api/trending')
 def trending():
     """Return a list of trending tickers with live prices."""
-    tickers = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'BTC-USD']
+    market = request.args.get('market', 'us')  # 'us' or 'cn'
     results = []
-    for sym in tickers:
-        try:
-            t = yf.Ticker(sym)
-            fast = t.fast_info
-            info = t.info
-            results.append({
-                'symbol': sym,
-                'name': info.get('shortName', sym),
-                'price': fast.get('lastPrice', 0),
-                'changePct': info.get('regularMarketChangePercent', 0),
-            })
-        except:
-            results.append({'symbol': sym, 'name': sym, 'price': 0, 'changePct': 0})
+
+    if market == 'cn':
+        # Use curated popular A-shares + individual spot queries (fast)
+        cn_popular = [
+            ('600519', '贵州茅台'), ('000858', '五粮液'), ('300750', '宁德时代'),
+            ('002594', '比亚迪'), ('600036', '招商银行'), ('000333', '美的集团'),
+        ]
+        for code, name in cn_popular:
+            try:
+                df = ak.stock_zh_a_hist(symbol=code, period='daily',
+                    start_date=(datetime.now() - timedelta(days=5)).strftime('%Y%m%d'),
+                    end_date=datetime.now().strftime('%Y%m%d'), adjust='qfq')
+                if len(df) >= 2:
+                    last = float(df.iloc[-1]['收盘'])
+                    prev = float(df.iloc[-2]['收盘'])
+                    pct = (last - prev) / prev * 100
+                    results.append({'symbol': code, 'name': name, 'price': last, 'changePct': round(pct, 2)})
+                elif len(df) == 1:
+                    results.append({'symbol': code, 'name': name, 'price': float(df.iloc[-1]['收盘']), 'changePct': 0})
+            except:
+                results.append({'symbol': code, 'name': name, 'price': 0, 'changePct': 0})
+    else:
+        tickers = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'BTC-USD']
+        for sym in tickers:
+            try:
+                t = yf.Ticker(sym)
+                fast = t.fast_info
+                info = t.info
+                results.append({
+                    'symbol': sym,
+                    'name': info.get('shortName', sym),
+                    'price': fast.get('lastPrice', 0),
+                    'changePct': info.get('regularMarketChangePercent', 0),
+                })
+            except:
+                results.append({'symbol': sym, 'name': sym, 'price': 0, 'changePct': 0})
     return jsonify(results)
 
 # Serve media files
