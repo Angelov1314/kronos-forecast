@@ -18,6 +18,10 @@ from datetime import datetime, timedelta
 app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
 
+# Register game blueprint
+from game import bp as game_bp
+app.register_blueprint(game_bp)
+
 # ---------- Kronos model (lazy-loaded) ----------
 _predictor = None
 
@@ -146,6 +150,10 @@ def search_cn_stocks(query):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/game')
+def game_page():
+    return render_template('game.html')
 
 @app.route('/api/quote/<ticker>')
 def get_quote(ticker):
