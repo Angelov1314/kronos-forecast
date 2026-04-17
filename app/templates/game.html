@@ -48,13 +48,14 @@
         </a>
         <span class="game-mode-badge">
           <span class="pulse-dot"></span>
-          <span id="modeBadgeText">GAME MODE</span>
+          <span id="modeBadgeText" data-i18n="gameMode">GAME MODE</span>
         </span>
       </div>
       <div class="top-actions">
+        <button class="glass-pill" id="langBtn" title="Language / 语言" style="cursor:pointer">中文</button>
         <a href="/" class="glass-pill" style="text-decoration:none">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          <span>Back to Forecast</span>
+          <span data-i18n="back">Back to Forecast</span>
         </a>
       </div>
     </header>
@@ -65,7 +66,7 @@
       <section class="panel game-chart-panel liquid-glass">
         <div class="game-chart-header">
           <div>
-            <h1 class="game-chart-title" id="gameTickerTitle">Mystery Stock</h1>
+            <h1 class="game-chart-title" id="gameTickerTitle" data-i18n="mysteryStock">Mystery Stock</h1>
             <p class="game-chart-sub" id="gameTickerSub">— / —</p>
           </div>
           <div class="game-chart-sub" id="gameHorizonLabel">horizon: 7d · level: easy</div>
@@ -75,11 +76,11 @@
           <div class="reveal-panel" id="revealPanel">
             <div class="liquid-glass reveal-card">
               <div class="reveal-score" id="revealScore">0</div>
-              <div class="reveal-score-label">score</div>
+              <div class="reveal-score-label" data-i18n="score">score</div>
               <div class="reveal-breakdown" id="revealBreakdown"></div>
               <div class="reveal-actions">
                 <button class="glass-pill game-btn-primary" id="nextQBtn">
-                  <span>Next →</span>
+                  <span data-i18n="next">Next →</span>
                 </button>
               </div>
             </div>
@@ -95,7 +96,7 @@
       <aside class="panel game-hud liquid-glass">
         <div>
           <div class="hud-row">
-            <span class="hud-label">Question</span>
+            <span class="hud-label" data-i18n="question">Question</span>
             <span class="hud-value" id="hudQIndex">1 / 5</span>
           </div>
           <div class="hud-progress-bar">
@@ -106,11 +107,11 @@
         <div class="hud-divider"></div>
 
         <div class="hud-row">
-          <span class="hud-label">Total Score</span>
+          <span class="hud-label" data-i18n="totalScore">Total Score</span>
           <span class="hud-score-number" id="hudTotalScore">0</span>
         </div>
         <div class="hud-row">
-          <span class="hud-label">Avg</span>
+          <span class="hud-label" data-i18n="avg">Avg</span>
           <span class="hud-value" id="hudAvgScore">—</span>
         </div>
 
@@ -123,8 +124,8 @@
 
         <!-- Submit -->
         <div class="game-actions">
-          <button class="glass-pill" id="resetBtn">Reset</button>
-          <button class="glass-pill game-btn-primary" id="submitBtn">Submit</button>
+          <button class="glass-pill" id="resetBtn" data-i18n="reset">Reset</button>
+          <button class="glass-pill game-btn-primary" id="submitBtn" data-i18n="submit">Submit</button>
         </div>
       </aside>
     </main>
@@ -139,22 +140,22 @@
         <div class="summary-stats">
           <div class="summary-stat">
             <div class="summary-stat-value" id="summaryAvg">—</div>
-            <div class="summary-stat-label">Avg Score</div>
+            <div class="summary-stat-label" data-i18n="avgScore">Avg Score</div>
           </div>
           <div class="summary-stat">
             <div class="summary-stat-value" id="summaryAcc">—</div>
-            <div class="summary-stat-label">Accuracy</div>
+            <div class="summary-stat-label" data-i18n="accuracy">Accuracy</div>
           </div>
           <div class="summary-stat">
             <div class="summary-stat-value" id="summaryLevel">—</div>
-            <div class="summary-stat-label">Mode</div>
+            <div class="summary-stat-label" data-i18n="mode">Mode</div>
           </div>
         </div>
       </section>
       <section class="summary-list liquid-glass" id="summaryList"></section>
       <div class="summary-actions">
-        <button class="glass-pill" id="playAgainBtn">Play Again</button>
-        <a href="/" class="glass-pill" style="text-decoration:none">Back to Forecast</a>
+        <button class="glass-pill" id="playAgainBtn" data-i18n="playAgain">Play Again</button>
+        <a href="/" class="glass-pill" style="text-decoration:none" data-i18n="back">Back to Forecast</a>
       </div>
     </main>
   </div>
@@ -162,72 +163,72 @@
   <!-- Mode Selection Modal -->
   <div class="game-modal-backdrop" id="modeModal">
     <div class="liquid-glass game-modal">
-      <h2>Prediction Game</h2>
-      <p class="sub">The app shows you 30 days of a random stock. You predict what happens next. Score beats every baseline? Not easy.</p>
+      <h2 data-i18n="gameTitle">Prediction Game</h2>
+      <p class="sub" data-i18n="gameIntro">The app shows you 30 days of a random stock. You predict what happens next. Score beats every baseline? Not easy.</p>
 
       <div class="mode-group">
-        <label class="mode-group-label">Difficulty</label>
+        <label class="mode-group-label" data-i18n="difficulty">Difficulty</label>
         <div class="mode-tiles" id="levelTiles">
           <button class="mode-tile active" data-level="1">
-            <span class="mode-tile-main">Easy</span>
-            <span class="mode-tile-sub">DIRECTION + %</span>
+            <span class="mode-tile-main" data-i18n="easy">Easy</span>
+            <span class="mode-tile-sub" data-i18n="easySub">DIRECTION + %</span>
           </button>
           <button class="mode-tile" data-level="2">
-            <span class="mode-tile-main">Medium</span>
-            <span class="mode-tile-sub">DRAW A LINE</span>
+            <span class="mode-tile-main" data-i18n="medium">Medium</span>
+            <span class="mode-tile-sub" data-i18n="mediumSub">DRAW A LINE</span>
           </button>
           <button class="mode-tile" data-level="3">
-            <span class="mode-tile-main">Hard</span>
-            <span class="mode-tile-sub">DRAW CANDLES</span>
+            <span class="mode-tile-main" data-i18n="hard">Hard</span>
+            <span class="mode-tile-sub" data-i18n="hardSub">DRAW CANDLES</span>
           </button>
         </div>
       </div>
 
       <div class="mode-group">
-        <label class="mode-group-label">Horizon</label>
+        <label class="mode-group-label" data-i18n="horizon">Horizon</label>
         <div class="mode-tiles" id="horizonTiles">
           <button class="mode-tile" data-horizon="3">
-            <span class="mode-tile-main">3 days</span>
-            <span class="mode-tile-sub">SHORT</span>
+            <span class="mode-tile-main" data-i18n="days3">3 days</span>
+            <span class="mode-tile-sub" data-i18n="subShort">SHORT</span>
           </button>
           <button class="mode-tile active" data-horizon="7">
-            <span class="mode-tile-main">7 days</span>
-            <span class="mode-tile-sub">WEEK</span>
+            <span class="mode-tile-main" data-i18n="days7">7 days</span>
+            <span class="mode-tile-sub" data-i18n="subWeek">WEEK</span>
           </button>
           <button class="mode-tile" data-horizon="30">
-            <span class="mode-tile-main">30 days</span>
-            <span class="mode-tile-sub">MONTH</span>
+            <span class="mode-tile-main" data-i18n="days30">30 days</span>
+            <span class="mode-tile-sub" data-i18n="subMonth">MONTH</span>
           </button>
         </div>
       </div>
 
       <div class="mode-group">
-        <label class="mode-group-label">Questions per Round</label>
+        <label class="mode-group-label" data-i18n="roundSize">Questions per Round</label>
         <div class="mode-tiles" id="poolTiles">
           <button class="mode-tile active" data-pool="5">
-            <span class="mode-tile-main">5</span>
-            <span class="mode-tile-sub">QUICK</span>
+            <span class="mode-tile-main" data-i18n="pool5">5</span>
+            <span class="mode-tile-sub" data-i18n="subQuick">QUICK</span>
           </button>
           <button class="mode-tile" data-pool="10">
-            <span class="mode-tile-main">10</span>
-            <span class="mode-tile-sub">STANDARD</span>
+            <span class="mode-tile-main" data-i18n="pool10">10</span>
+            <span class="mode-tile-sub" data-i18n="subStandard">STANDARD</span>
           </button>
           <button class="mode-tile" data-pool="20">
-            <span class="mode-tile-main">20</span>
-            <span class="mode-tile-sub">MARATHON</span>
+            <span class="mode-tile-main" data-i18n="pool20">20</span>
+            <span class="mode-tile-sub" data-i18n="subMarathon">MARATHON</span>
           </button>
         </div>
       </div>
 
       <div class="anon-toggle-row">
         <div>
-          <span>Anonymous mode</span>
-          <small>Hide ticker name during guessing (harder, pure chart-reading)</small>
+          <span data-i18n="blindMode">Blind Mode</span>
+          <small data-i18n="blindModeHint">Hide ticker name AND date axis — pure chart reading. Everything revealed after submit.</small>
         </div>
-        <div class="switch" id="anonSwitch"></div>
+        <div class="switch" id="blindSwitch"></div>
       </div>
 
-      <button class="glass-pill begin-btn" id="beginBtn">BEGIN</button>
+      <button class="glass-pill begin-btn" id="beginBtn" data-i18n="begin">BEGIN</button>
     </div>
   </div>
 

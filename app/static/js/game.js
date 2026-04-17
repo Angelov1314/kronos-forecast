@@ -6,18 +6,168 @@
 (function () {
   'use strict';
 
+  // ---------- i18n ----------
+  const I18N = {
+    en: {
+      gameMode: 'GAME MODE',
+      back: 'Back to Forecast',
+      mysteryStock: 'Mystery Stock',
+      question: 'Question',
+      totalScore: 'Total Score',
+      avg: 'Avg',
+      reset: 'Reset',
+      submit: 'Submit',
+      score: 'score',
+      next: 'Next →',
+      playAgain: 'Play Again',
+      gameTitle: 'Prediction Game',
+      gameIntro: 'The app shows you 30 days of a random stock. You predict what happens next. Score beats every baseline? Not easy.',
+      difficulty: 'Difficulty',
+      horizon: 'Horizon',
+      roundSize: 'Questions per Round',
+      blindMode: 'Blind Mode',
+      blindModeHint: 'Hide ticker name AND date axis — pure chart reading. Everything revealed after submit.',
+      begin: 'BEGIN',
+      easy: 'Easy',
+      medium: 'Medium',
+      hard: 'Hard',
+      easySub: 'DIRECTION + %',
+      mediumSub: 'DRAW A LINE',
+      hardSub: 'DRAW CANDLES',
+      days3: '3 days',
+      days7: '7 days',
+      days30: '30 days',
+      subShort: 'SHORT',
+      subWeek: 'WEEK',
+      subMonth: 'MONTH',
+      pool5: '5',
+      pool10: '10',
+      pool20: '20',
+      subQuick: 'QUICK',
+      subStandard: 'STANDARD',
+      subMarathon: 'MARATHON',
+      yourPrediction: 'Your Prediction',
+      priceGoHint: 'Over the next %d days, price will go:',
+      drawLine: 'Draw the Line',
+      drawLineHint: 'Drag the glowing handles on the chart to predict the close price for each of the next %d days.',
+      drawCandles: 'Draw the Candles',
+      drawCandlesHint: 'For each of the next %d days, drag the four handles to set high, low, open, and close.',
+      cutoff: 'cutoff',
+      horizonLabel: 'horizon: %dd · level: %s',
+      daysShown: 'Question %d — 30 days shown',
+      ticker: 'Ticker',
+      revealed: 'Revealed',
+      youSaid: 'You said',
+      actual: 'Actual',
+      error: 'Error',
+      direction: 'Direction',
+      directionMatched: '✓ matched',
+      directionMissed: '✗ missed',
+      rmse: 'RMSE',
+      directionAccuracy: 'Direction accuracy',
+      weightedRmse: 'Weighted RMSE',
+      avgScore: 'Avg Score',
+      accuracy: 'Accuracy',
+      mode: 'Mode',
+      failedStart: 'Failed to start game: ',
+      failedQuestion: 'Failed to load question: ',
+      failedSubmit: 'Submit failed: ',
+      failedNext: 'Next failed: ',
+      failedSummary: 'Summary failed: ',
+      langButton: '中文',
+    },
+    zh: {
+      gameMode: '游戏模式',
+      back: '返回预测',
+      mysteryStock: '神秘股票',
+      question: '题目',
+      totalScore: '总分',
+      avg: '平均',
+      reset: '重置',
+      submit: '提交',
+      score: '得分',
+      next: '下一题 →',
+      playAgain: '再玩一次',
+      gameTitle: '预测游戏',
+      gameIntro: '应用会显示某只随机股票前 30 天的走势。你来预测接下来的走势。能超过所有基线模型吗？没那么容易。',
+      difficulty: '难度',
+      horizon: '预测时长',
+      roundSize: '每轮题数',
+      blindMode: '盲盒模式',
+      blindModeHint: '同时隐藏股票名称与时间轴 — 纯图表阅读。提交答案后完全揭晓。',
+      begin: '开始',
+      easy: '简单',
+      medium: '中等',
+      hard: '困难',
+      easySub: '方向 + 涨跌幅',
+      mediumSub: '画走势线',
+      hardSub: '画K线',
+      days3: '3 天',
+      days7: '7 天',
+      days30: '30 天',
+      subShort: '短线',
+      subWeek: '周线',
+      subMonth: '月线',
+      pool5: '5',
+      pool10: '10',
+      pool20: '20',
+      subQuick: '速战',
+      subStandard: '标准',
+      subMarathon: '马拉松',
+      yourPrediction: '你的预测',
+      priceGoHint: '未来 %d 天内，价格将会：',
+      drawLine: '画出走势线',
+      drawLineHint: '拖动图表上的发光手柄，预测接下来 %d 天每天的收盘价。',
+      drawCandles: '画出K线',
+      drawCandlesHint: '为接下来的 %d 天，拖动四个手柄设置最高、最低、开盘和收盘价。',
+      cutoff: '截止',
+      horizonLabel: '时长: %d天 · 难度: %s',
+      daysShown: '第 %d 题 — 显示 30 天',
+      ticker: '股票代码',
+      revealed: '揭晓',
+      youSaid: '你的答案',
+      actual: '实际值',
+      error: '误差',
+      direction: '方向',
+      directionMatched: '✓ 正确',
+      directionMissed: '✗ 错误',
+      rmse: 'RMSE',
+      directionAccuracy: '方向准确率',
+      weightedRmse: '加权 RMSE',
+      avgScore: '平均分',
+      accuracy: '准确率',
+      mode: '模式',
+      failedStart: '启动游戏失败: ',
+      failedQuestion: '加载题目失败: ',
+      failedSubmit: '提交失败: ',
+      failedNext: '加载下一题失败: ',
+      failedSummary: '加载总结失败: ',
+      langButton: 'EN',
+    },
+  };
+
+  let LANG = localStorage.getItem('kronos_game_lang') || 'en';
+  const t = (key) => (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key;
+  const tf = (key, ...args) => {
+    let s = t(key);
+    args.forEach(a => { s = s.replace(/%[ds]/, a); });
+    return s;
+  };
+
   // ---------- State ----------
   const State = {
     sessionId: null,
-    mode: { level: 1, horizon: 7, pool_size: 5, anonymous: false },
-    currentQ: null,       // current question object from server
+    mode: { level: 1, horizon: 7, pool_size: 5, anonymous: false, blind: false },
+    currentQ: null,
     totalScore: 0,
-    scores: [],           // per-question scores
+    scores: [],
     chart: null,
     candleSeries: null,
-    truthSeries: null,    // added during reveal
-    drawOverlay: null,    // DrawOverlay instance for L2/L3
-    l1SliderValue: 0,     // Level 1 predicted_pct
+    truthSeries: null,
+    drawOverlay: null,
+    l1SliderValue: 0,
+    setupCandlesFull: [],   // full setup for staggered reveal
+    setupAnimating: false,
   };
 
   // ---------- DOM refs ----------
@@ -33,11 +183,53 @@
   }
 
   function levelName(n) {
-    return ({ 1: 'Easy', 2: 'Medium', 3: 'Hard' })[n] || '?';
+    return ({ 1: t('easy'), 2: t('medium'), 3: t('hard') })[n] || '?';
   }
 
   function showLoader(show) {
     $('gameLoader').style.display = show ? 'flex' : 'none';
+  }
+
+  // ---------- i18n Application ----------
+  function applyI18N() {
+    // Mode modal
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      el.textContent = t(key);
+    });
+    // Lang button text
+    const lb = $('langBtn');
+    if (lb) lb.textContent = t('langButton');
+    // Mode badge default
+    if ($('modeBadgeText') && !State.sessionId) {
+      $('modeBadgeText').textContent = t('gameMode');
+    }
+  }
+
+  function toggleLang() {
+    LANG = (LANG === 'en') ? 'zh' : 'en';
+    localStorage.setItem('kronos_game_lang', LANG);
+    applyI18N();
+    // Re-render current screen chrome if applicable
+    if (State.currentQ) {
+      updateModeBadge();
+      // Re-render answer area labels by re-setting up
+      setupAnswerArea(State.currentQ);
+      refreshQuestionHeader();
+    }
+  }
+
+  function refreshQuestionHeader() {
+    const q = State.currentQ;
+    if (!q) return;
+    $('gameTickerTitle').textContent =
+      (State.mode.blind || State.mode.anonymous) ? t('mysteryStock') : q.ticker_name;
+    const subAnon = tf('daysShown', (State.currentQIndex || 0) + 1);
+    $('gameTickerSub').textContent =
+      (State.mode.blind || State.mode.anonymous)
+        ? subAnon
+        : `${q.ticker_display} · ${t('cutoff')} ${q.cutoff_date}`;
+    $('gameHorizonLabel').textContent = tf('horizonLabel', q.horizon, levelName(q.level));
   }
 
   // ---------- Mode Modal ----------
@@ -45,19 +237,18 @@
     const levelTiles = $('levelTiles');
     const horizonTiles = $('horizonTiles');
     const poolTiles = $('poolTiles');
-    const anonSwitch = $('anonSwitch');
+    const blindSwitch = $('blindSwitch');
     const beginBtn = $('beginBtn');
 
-    // Restore last preferences
     try {
       const saved = JSON.parse(localStorage.getItem('kronos_game_prefs') || '{}');
       if (saved.level) State.mode.level = saved.level;
       if (saved.horizon) State.mode.horizon = saved.horizon;
       if (saved.pool_size) State.mode.pool_size = saved.pool_size;
-      if (saved.anonymous) State.mode.anonymous = saved.anonymous;
+      if (saved.blind != null) State.mode.blind = saved.blind;
+      if (saved.anonymous != null) State.mode.anonymous = saved.anonymous;
     } catch (_) {}
 
-    // Helper to select tile
     function selectTile(container, selector, key, val) {
       container.querySelectorAll('.mode-tile').forEach(t => t.classList.remove('active'));
       const target = container.querySelector(selector);
@@ -65,13 +256,11 @@
       State.mode[key] = val;
     }
 
-    // Apply saved selections visually
     selectTile(levelTiles, `[data-level="${State.mode.level}"]`, 'level', State.mode.level);
     selectTile(horizonTiles, `[data-horizon="${State.mode.horizon}"]`, 'horizon', State.mode.horizon);
     selectTile(poolTiles, `[data-pool="${State.mode.pool_size}"]`, 'pool_size', State.mode.pool_size);
-    if (State.mode.anonymous) anonSwitch.classList.add('on');
+    if (State.mode.blind) blindSwitch.classList.add('on');
 
-    // Wire up
     levelTiles.querySelectorAll('.mode-tile').forEach(tile => {
       tile.addEventListener('click', () => {
         const v = parseInt(tile.dataset.level);
@@ -90,9 +279,11 @@
         selectTile(poolTiles, `[data-pool="${v}"]`, 'pool_size', v);
       });
     });
-    anonSwitch.addEventListener('click', () => {
-      State.mode.anonymous = !State.mode.anonymous;
-      anonSwitch.classList.toggle('on', State.mode.anonymous);
+    blindSwitch.addEventListener('click', () => {
+      State.mode.blind = !State.mode.blind;
+      // Blind implies anonymous
+      State.mode.anonymous = State.mode.blind;
+      blindSwitch.classList.toggle('on', State.mode.blind);
     });
 
     beginBtn.addEventListener('click', startGame);
@@ -152,22 +343,30 @@
     State.chart = chart;
     State.candleSeries = candleSeries;
 
-    // Resize
     const ro = new ResizeObserver(() => {
       chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
       if (State.drawOverlay) State.drawOverlay.rebuild();
     });
     ro.observe(container);
 
-    // Re-render overlay after chart finishes layout changes
     chart.timeScale().subscribeVisibleTimeRangeChange(() => {
       if (State.drawOverlay) State.drawOverlay.rebuild();
     });
   }
 
+  function applyChartBlindMode(blind) {
+    if (!State.chart) return;
+    State.chart.applyOptions({
+      timeScale: {
+        timeVisible: !blind,
+        // Hide tick labels in blind mode by using an empty formatter
+        tickMarkFormatter: blind ? () => '' : undefined,
+      },
+    });
+  }
+
   // ---------- Game Flow ----------
   async function startGame() {
-    // Save preferences
     localStorage.setItem('kronos_game_prefs', JSON.stringify(State.mode));
 
     hideModeModal();
@@ -193,14 +392,15 @@
       await loadNextQuestion();
     } catch (err) {
       console.error(err);
-      alert('Failed to start game: ' + err.message);
+      alert(t('failedStart') + err.message);
       showModeModal();
     }
   }
 
   function updateModeBadge() {
+    const blind = State.mode.blind ? ' · BLIND' : '';
     $('modeBadgeText').textContent =
-      `${levelName(State.mode.level)} · ${State.mode.horizon}D · ${State.mode.pool_size}Q`;
+      `${levelName(State.mode.level)} · ${State.mode.horizon}D · ${State.mode.pool_size}Q${blind}`;
   }
 
   async function loadNextQuestion() {
@@ -214,10 +414,11 @@
         return;
       }
       State.currentQ = data.question;
+      State.currentQIndex = data.index;
       renderQuestion(data);
     } catch (err) {
       console.error(err);
-      alert('Failed to load question: ' + err.message);
+      alert(t('failedQuestion') + err.message);
     } finally {
       showLoader(false);
     }
@@ -226,24 +427,27 @@
   function renderQuestion(data) {
     const q = data.question;
 
+    // Apply blind mode axis options
+    applyChartBlindMode(!!q.blind);
+
     // Title
     $('gameTickerTitle').textContent = q.ticker_name;
     $('gameTickerSub').textContent =
-      State.mode.anonymous
-        ? `Question ${data.index + 1} — 30 days shown`
-        : `${q.ticker_display} · cutoff ${q.cutoff_date}`;
-    $('gameHorizonLabel').textContent =
-      `horizon: ${q.horizon}d · level: ${levelName(q.level)}`;
+      (q.blind || q.anonymous)
+        ? tf('daysShown', data.index + 1)
+        : `${q.ticker_display} · ${t('cutoff')} ${q.cutoff_date}`;
+    $('gameHorizonLabel').textContent = tf('horizonLabel', q.horizon, levelName(q.level));
 
     // HUD
     $('hudQIndex').textContent = `${data.index + 1} / ${data.total}`;
     $('hudProgress').style.width = `${(data.index / data.total) * 100}%`;
 
-    // Render setup candles
+    // Prepare full candle data
     const candles = q.setup.map(c => ({
       time: c.time,
       open: c.open, high: c.high, low: c.low, close: c.close,
     }));
+    State.setupCandlesFull = candles;
 
     // Clear existing truth overlay if any
     if (State.truthSeries) {
@@ -251,30 +455,58 @@
       State.truthSeries = null;
     }
 
+    // Hide reveal + any previous overlay first
+    $('revealPanel').classList.remove('show');
+    if (State.drawOverlay) {
+      State.drawOverlay.destroy();
+      State.drawOverlay = null;
+    }
+
+    // Set candle series to empty then animate draw-in
+    State.candleSeries.setData([]);
+    // Set visible range once using full data for a stable layout, then restart empty
     State.candleSeries.setData(candles);
     State.chart.timeScale().fitContent();
+    // Now clear and animate staggered reveal
+    State.candleSeries.setData([]);
+    animateSetupReveal(candles).then(() => {
+      // After animation, set up answer area + drawing overlay
+      setupAnswerArea(q);
+      requestAnimationFrame(() => {
+        if (q.level === 2 || q.level === 3) {
+          State.drawOverlay = new DrawOverlay($('drawOverlay'), {
+            level: q.level,
+            setup: q.setup,
+            horizon: q.horizon,
+            chart: State.chart,
+            candleSeries: State.candleSeries,
+          });
+        }
+      });
+    });
+  }
 
-    // Hide reveal
-    $('revealPanel').classList.remove('show');
-
-    // Set up drawing overlay / slider
-    setupAnswerArea(q);
-
-    // Wait one frame for chart to lay out, then init overlay
-    requestAnimationFrame(() => {
-      if (State.drawOverlay) {
-        State.drawOverlay.destroy();
-        State.drawOverlay = null;
-      }
-      if (q.level === 2 || q.level === 3) {
-        State.drawOverlay = new DrawOverlay($('drawOverlay'), {
-          level: q.level,
-          setup: q.setup,
-          horizon: q.horizon,
-          chart: State.chart,
-          candleSeries: State.candleSeries,
-        });
-      }
+  function animateSetupReveal(candles) {
+    return new Promise((resolve) => {
+      State.setupAnimating = true;
+      // Total animation ~800-1200ms across 30 candles — ~30ms stagger
+      const stagger = Math.max(12, Math.min(40, Math.floor(600 / Math.max(1, candles.length))));
+      let i = 0;
+      const tick = () => {
+        if (i > candles.length) {
+          State.setupAnimating = false;
+          resolve();
+          return;
+        }
+        State.candleSeries.setData(candles.slice(0, i));
+        i += 1;
+        if (i <= candles.length) setTimeout(tick, stagger);
+        else {
+          State.setupAnimating = false;
+          resolve();
+        }
+      };
+      tick();
     });
   }
 
@@ -283,14 +515,13 @@
     area.innerHTML = '';
 
     if (q.level === 1) {
-      // Slider for direction + magnitude
       const maxPct = { 3: 20, 7: 30, 30: 80 }[q.horizon] || 30;
       State.l1SliderValue = 0;
 
       area.innerHTML = `
         <div class="l1-slider-group">
-          <h4 class="answer-title">Your Prediction</h4>
-          <p class="answer-hint">Over the next ${q.horizon} days, price will go:</p>
+          <h4 class="answer-title">${t('yourPrediction')}</h4>
+          <p class="answer-hint">${tf('priceGoHint', q.horizon)}</p>
           <div class="l1-value" id="l1ValueDisplay">0.0%</div>
           <input type="range" id="l1Slider" min="${-maxPct}" max="${maxPct}" step="0.1" value="0" class="glass-range">
           <div class="l1-range-labels">
@@ -314,19 +545,20 @@
       update();
     } else if (q.level === 2) {
       area.innerHTML = `
-        <h4 class="answer-title">Draw the Line</h4>
-        <p class="answer-hint">Drag the glowing handles on the chart to predict the close price for each of the next ${q.horizon} days.</p>
+        <h4 class="answer-title">${t('drawLine')}</h4>
+        <p class="answer-hint">${tf('drawLineHint', q.horizon)}</p>
       `;
     } else if (q.level === 3) {
       area.innerHTML = `
-        <h4 class="answer-title">Draw the Candles</h4>
-        <p class="answer-hint">For each of the next ${q.horizon} days, drag the four handles to set high, low, open, and close.</p>
+        <h4 class="answer-title">${t('drawCandles')}</h4>
+        <p class="answer-hint">${tf('drawCandlesHint', q.horizon)}</p>
       `;
     }
   }
 
   async function submitAnswer() {
     if (!State.currentQ) return;
+    if (State.setupAnimating) return;  // ignore until setup animation done
     const q = State.currentQ;
 
     let answer;
@@ -355,14 +587,26 @@
       renderReveal(data);
     } catch (err) {
       console.error(err);
-      alert('Submit failed: ' + err.message);
+      alert(t('failedSubmit') + err.message);
     } finally {
       showLoader(false);
     }
   }
 
   function renderReveal(result) {
-    // Add truth candles to chart in gold
+    // If blind mode, re-render setup with REAL timestamps so the reveal is truthful
+    const blindReveal = State.mode.blind && result.setup_real;
+    if (blindReveal) {
+      // Restore real time axis
+      applyChartBlindMode(false);
+      const realCandles = result.setup_real.map(c => ({
+        time: c.time, open: c.open, high: c.high, low: c.low, close: c.close,
+      }));
+      State.candleSeries.setData(realCandles);
+      State.chart.timeScale().fitContent();
+    }
+
+    // Add truth candles in gold
     if (State.truthSeries) {
       State.chart.removeSeries(State.truthSeries);
     }
@@ -393,17 +637,21 @@
     };
     reveal();
 
-    // Hide drawing overlay handles, keep shapes visible
     if (State.drawOverlay) {
       State.drawOverlay.svg.classList.remove('active');
     }
 
-    // Update totals
+    // If blind, update the title to reveal the stock
+    if (State.mode.blind || State.mode.anonymous) {
+      const rev = result.ticker_reveal || {};
+      $('gameTickerTitle').textContent = rev.name || rev.symbol;
+      $('gameTickerSub').textContent = `${rev.symbol} · ${t('cutoff')} ${rev.cutoff_date}`;
+    }
+
     State.scores.push(result.score);
     State.totalScore = State.scores.reduce((a, b) => a + b, 0);
     updateHUD();
 
-    // Show reveal card after truth animation starts
     setTimeout(() => {
       $('revealScore').textContent = '0';
       $('revealBreakdown').innerHTML = buildBreakdownHTML(result);
@@ -416,24 +664,24 @@
     const b = result.breakdown || {};
     const rev = result.ticker_reveal || {};
     const rows = [];
-    if (!State.mode.anonymous) {
-      rows.push(`<div class="row"><span>Ticker</span><span class="v">${rev.symbol}</span></div>`);
+    if (State.mode.blind || State.mode.anonymous) {
+      rows.push(`<div class="row"><span>${t('revealed')}</span><span class="v">${rev.symbol} · ${rev.cutoff_date}</span></div>`);
     } else {
-      rows.push(`<div class="row"><span>Revealed</span><span class="v">${rev.symbol} · ${rev.cutoff_date}</span></div>`);
+      rows.push(`<div class="row"><span>${t('ticker')}</span><span class="v">${rev.symbol}</span></div>`);
     }
     if ('predicted_pct' in b) {
-      rows.push(`<div class="row"><span>You said</span><span class="v">${b.predicted_pct >= 0 ? '+' : ''}${b.predicted_pct}%</span></div>`);
-      rows.push(`<div class="row"><span>Actual</span><span class="v">${b.actual_pct >= 0 ? '+' : ''}${b.actual_pct}%</span></div>`);
-      rows.push(`<div class="row"><span>Error</span><span class="v">${b.error_pct}%</span></div>`);
-      rows.push(`<div class="row"><span>Direction</span><span class="v">${b.direction_match ? '✓ matched' : '✗ missed'}</span></div>`);
+      rows.push(`<div class="row"><span>${t('youSaid')}</span><span class="v">${b.predicted_pct >= 0 ? '+' : ''}${b.predicted_pct}%</span></div>`);
+      rows.push(`<div class="row"><span>${t('actual')}</span><span class="v">${b.actual_pct >= 0 ? '+' : ''}${b.actual_pct}%</span></div>`);
+      rows.push(`<div class="row"><span>${t('error')}</span><span class="v">${b.error_pct}%</span></div>`);
+      rows.push(`<div class="row"><span>${t('direction')}</span><span class="v">${b.direction_match ? t('directionMatched') : t('directionMissed')}</span></div>`);
     }
     if ('rmse_pct' in b) {
-      rows.push(`<div class="row"><span>RMSE</span><span class="v">${b.rmse_pct}%</span></div>`);
-      rows.push(`<div class="row"><span>Direction accuracy</span><span class="v">${b.direction_accuracy_pct}%</span></div>`);
+      rows.push(`<div class="row"><span>${t('rmse')}</span><span class="v">${b.rmse_pct}%</span></div>`);
+      rows.push(`<div class="row"><span>${t('directionAccuracy')}</span><span class="v">${b.direction_accuracy_pct}%</span></div>`);
     }
     if ('weighted_rmse_pct' in b) {
-      rows.push(`<div class="row"><span>Weighted RMSE</span><span class="v">${b.weighted_rmse_pct}%</span></div>`);
-      rows.push(`<div class="row"><span>Direction accuracy</span><span class="v">${b.direction_accuracy_pct}%</span></div>`);
+      rows.push(`<div class="row"><span>${t('weightedRmse')}</span><span class="v">${b.weighted_rmse_pct}%</span></div>`);
+      rows.push(`<div class="row"><span>${t('directionAccuracy')}</span><span class="v">${b.direction_accuracy_pct}%</span></div>`);
     }
     return rows.join('');
   }
@@ -462,7 +710,6 @@
         return;
       }
 
-      // Destroy overlay from previous question
       if (State.drawOverlay) {
         State.drawOverlay.destroy();
         State.drawOverlay = null;
@@ -473,10 +720,11 @@
       }
 
       State.currentQ = data.question;
+      State.currentQIndex = data.index;
       renderQuestion(data);
     } catch (err) {
       console.error(err);
-      alert('Next failed: ' + err.message);
+      alert(t('failedNext') + err.message);
     } finally {
       showLoader(false);
     }
@@ -500,7 +748,7 @@
       renderSummary(data);
     } catch (err) {
       console.error(err);
-      alert('Summary failed: ' + err.message);
+      alert(t('failedSummary') + err.message);
     }
   }
 
@@ -550,9 +798,11 @@
       State.sessionId = null;
       showModeModal();
     });
+    const lb = $('langBtn');
+    if (lb) lb.addEventListener('click', toggleLang);
   }
 
-  // ---------- Audio (reused from main app) ----------
+  // ---------- Audio ----------
   function initAudio() {
     const audio = $('bgAudio');
     const toggle = $('audioToggle');
@@ -575,13 +825,13 @@
       updateIcon();
     });
 
-    // First user interaction
     document.addEventListener('click', tryPlay, { once: true });
     updateIcon();
   }
 
   // ---------- Init ----------
   document.addEventListener('DOMContentLoaded', () => {
+    applyI18N();
     initModeModal();
     initEvents();
     initAudio();

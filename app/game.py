@@ -26,7 +26,7 @@ bp = Blueprint("game", __name__, url_prefix="/api/game")
 
 # ---------- Ticker Pool ----------
 TICKER_POOL: List[Dict[str, str]] = [
-    # US majors
+    # === US — Mega Cap Tech ===
     {"symbol": "AAPL", "name": "Apple Inc.", "market": "us"},
     {"symbol": "MSFT", "name": "Microsoft Corp.", "market": "us"},
     {"symbol": "NVDA", "name": "NVIDIA Corp.", "market": "us"},
@@ -34,33 +34,172 @@ TICKER_POOL: List[Dict[str, str]] = [
     {"symbol": "AMZN", "name": "Amazon.com Inc.", "market": "us"},
     {"symbol": "META", "name": "Meta Platforms Inc.", "market": "us"},
     {"symbol": "TSLA", "name": "Tesla Inc.", "market": "us"},
+    # === US — Semis & Hardware ===
+    {"symbol": "AMD", "name": "Advanced Micro Devices", "market": "us"},
+    {"symbol": "INTC", "name": "Intel Corp.", "market": "us"},
+    {"symbol": "AVGO", "name": "Broadcom Inc.", "market": "us"},
+    {"symbol": "QCOM", "name": "Qualcomm Inc.", "market": "us"},
+    {"symbol": "TXN", "name": "Texas Instruments", "market": "us"},
+    {"symbol": "MU", "name": "Micron Technology", "market": "us"},
+    {"symbol": "ASML", "name": "ASML Holding", "market": "us"},
+    {"symbol": "TSM", "name": "TSMC", "market": "us"},
+    {"symbol": "AMAT", "name": "Applied Materials", "market": "us"},
+    {"symbol": "LRCX", "name": "Lam Research", "market": "us"},
+    {"symbol": "KLAC", "name": "KLA Corp.", "market": "us"},
+    # === US — Software & SaaS ===
+    {"symbol": "CRM", "name": "Salesforce Inc.", "market": "us"},
+    {"symbol": "ORCL", "name": "Oracle Corp.", "market": "us"},
+    {"symbol": "ADBE", "name": "Adobe Inc.", "market": "us"},
+    {"symbol": "NOW", "name": "ServiceNow", "market": "us"},
+    {"symbol": "INTU", "name": "Intuit Inc.", "market": "us"},
+    {"symbol": "SNOW", "name": "Snowflake Inc.", "market": "us"},
+    {"symbol": "PLTR", "name": "Palantir Technologies", "market": "us"},
+    {"symbol": "SHOP", "name": "Shopify Inc.", "market": "us"},
+    {"symbol": "CRWD", "name": "CrowdStrike", "market": "us"},
+    {"symbol": "PANW", "name": "Palo Alto Networks", "market": "us"},
+    {"symbol": "ZS", "name": "Zscaler Inc.", "market": "us"},
+    {"symbol": "NET", "name": "Cloudflare Inc.", "market": "us"},
+    {"symbol": "DDOG", "name": "Datadog Inc.", "market": "us"},
+    # === US — Finance ===
     {"symbol": "JPM", "name": "JPMorgan Chase", "market": "us"},
+    {"symbol": "BAC", "name": "Bank of America", "market": "us"},
+    {"symbol": "WFC", "name": "Wells Fargo", "market": "us"},
+    {"symbol": "GS", "name": "Goldman Sachs", "market": "us"},
+    {"symbol": "MS", "name": "Morgan Stanley", "market": "us"},
+    {"symbol": "C", "name": "Citigroup", "market": "us"},
     {"symbol": "V", "name": "Visa Inc.", "market": "us"},
-    {"symbol": "JNJ", "name": "Johnson & Johnson", "market": "us"},
+    {"symbol": "MA", "name": "Mastercard Inc.", "market": "us"},
+    {"symbol": "AXP", "name": "American Express", "market": "us"},
+    {"symbol": "BLK", "name": "BlackRock Inc.", "market": "us"},
+    {"symbol": "SCHW", "name": "Charles Schwab", "market": "us"},
+    {"symbol": "PYPL", "name": "PayPal Holdings", "market": "us"},
+    {"symbol": "COIN", "name": "Coinbase Global", "market": "us"},
+    # === US — Consumer / Retail ===
     {"symbol": "WMT", "name": "Walmart Inc.", "market": "us"},
+    {"symbol": "COST", "name": "Costco Wholesale", "market": "us"},
+    {"symbol": "HD", "name": "Home Depot", "market": "us"},
+    {"symbol": "LOW", "name": "Lowe's Cos.", "market": "us"},
+    {"symbol": "TGT", "name": "Target Corp.", "market": "us"},
+    {"symbol": "NKE", "name": "Nike Inc.", "market": "us"},
+    {"symbol": "SBUX", "name": "Starbucks Corp.", "market": "us"},
+    {"symbol": "MCD", "name": "McDonald's Corp.", "market": "us"},
+    {"symbol": "KO", "name": "Coca-Cola Co.", "market": "us"},
+    {"symbol": "PEP", "name": "PepsiCo Inc.", "market": "us"},
+    {"symbol": "PG", "name": "Procter & Gamble", "market": "us"},
+    {"symbol": "DIS", "name": "Walt Disney", "market": "us"},
+    {"symbol": "NFLX", "name": "Netflix Inc.", "market": "us"},
+    # === US — Healthcare ===
+    {"symbol": "JNJ", "name": "Johnson & Johnson", "market": "us"},
+    {"symbol": "UNH", "name": "UnitedHealth Group", "market": "us"},
+    {"symbol": "LLY", "name": "Eli Lilly & Co.", "market": "us"},
+    {"symbol": "PFE", "name": "Pfizer Inc.", "market": "us"},
+    {"symbol": "MRK", "name": "Merck & Co.", "market": "us"},
+    {"symbol": "ABBV", "name": "AbbVie Inc.", "market": "us"},
+    {"symbol": "TMO", "name": "Thermo Fisher", "market": "us"},
+    {"symbol": "ABT", "name": "Abbott Labs", "market": "us"},
+    {"symbol": "DHR", "name": "Danaher Corp.", "market": "us"},
+    {"symbol": "GILD", "name": "Gilead Sciences", "market": "us"},
+    # === US — Energy / Industrials ===
     {"symbol": "XOM", "name": "Exxon Mobil", "market": "us"},
+    {"symbol": "CVX", "name": "Chevron Corp.", "market": "us"},
+    {"symbol": "COP", "name": "ConocoPhillips", "market": "us"},
+    {"symbol": "SLB", "name": "Schlumberger", "market": "us"},
+    {"symbol": "OXY", "name": "Occidental Petroleum", "market": "us"},
+    {"symbol": "BA", "name": "Boeing Co.", "market": "us"},
+    {"symbol": "CAT", "name": "Caterpillar Inc.", "market": "us"},
+    {"symbol": "GE", "name": "General Electric", "market": "us"},
+    {"symbol": "F", "name": "Ford Motor Co.", "market": "us"},
+    {"symbol": "GM", "name": "General Motors", "market": "us"},
+    # === US — Communications / Media ===
+    {"symbol": "T", "name": "AT&T Inc.", "market": "us"},
+    {"symbol": "VZ", "name": "Verizon Communications", "market": "us"},
+    {"symbol": "TMUS", "name": "T-Mobile US", "market": "us"},
+    {"symbol": "UBER", "name": "Uber Technologies", "market": "us"},
+    {"symbol": "ABNB", "name": "Airbnb Inc.", "market": "us"},
+    {"symbol": "SPOT", "name": "Spotify Technology", "market": "us"},
+    # === US — Major ETFs ===
     {"symbol": "SPY", "name": "S&P 500 ETF", "market": "us"},
     {"symbol": "QQQ", "name": "Nasdaq 100 ETF", "market": "us"},
     {"symbol": "DIA", "name": "Dow Jones ETF", "market": "us"},
-    # A-share majors
+    {"symbol": "IWM", "name": "Russell 2000 ETF", "market": "us"},
+    {"symbol": "GLD", "name": "Gold ETF", "market": "us"},
+    {"symbol": "SLV", "name": "Silver ETF", "market": "us"},
+    {"symbol": "USO", "name": "US Oil Fund", "market": "us"},
+    {"symbol": "TLT", "name": "20+ Year Treasury", "market": "us"},
+    {"symbol": "VXX", "name": "VIX Short-Term Futures", "market": "us"},
+    {"symbol": "ARKK", "name": "ARK Innovation ETF", "market": "us"},
+    {"symbol": "SMH", "name": "Semiconductor ETF", "market": "us"},
+    {"symbol": "XLE", "name": "Energy Sector ETF", "market": "us"},
+    {"symbol": "XLF", "name": "Financials Sector ETF", "market": "us"},
+    {"symbol": "XLK", "name": "Technology Sector ETF", "market": "us"},
+
+    # === A-share — Consumer ===
     {"symbol": "600519", "name": "贵州茅台", "market": "cn"},
     {"symbol": "000858", "name": "五粮液", "market": "cn"},
+    {"symbol": "000568", "name": "泸州老窖", "market": "cn"},
+    {"symbol": "600809", "name": "山西汾酒", "market": "cn"},
+    {"symbol": "000596", "name": "古井贡酒", "market": "cn"},
+    {"symbol": "600887", "name": "伊利股份", "market": "cn"},
+    {"symbol": "603288", "name": "海天味业", "market": "cn"},
+    {"symbol": "000333", "name": "美的集团", "market": "cn"},
+    {"symbol": "000651", "name": "格力电器", "market": "cn"},
+    {"symbol": "600690", "name": "海尔智家", "market": "cn"},
+    # === A-share — 新能源 / 汽车 ===
     {"symbol": "300750", "name": "宁德时代", "market": "cn"},
     {"symbol": "002594", "name": "比亚迪", "market": "cn"},
+    {"symbol": "601633", "name": "长城汽车", "market": "cn"},
+    {"symbol": "600104", "name": "上汽集团", "market": "cn"},
+    {"symbol": "002460", "name": "赣锋锂业", "market": "cn"},
+    {"symbol": "002466", "name": "天齐锂业", "market": "cn"},
+    {"symbol": "300014", "name": "亿纬锂能", "market": "cn"},
+    {"symbol": "601012", "name": "隆基绿能", "market": "cn"},
+    {"symbol": "002129", "name": "TCL中环", "market": "cn"},
+    # === A-share — 金融 ===
     {"symbol": "600036", "name": "招商银行", "market": "cn"},
-    {"symbol": "000333", "name": "美的集团", "market": "cn"},
     {"symbol": "601318", "name": "中国平安", "market": "cn"},
+    {"symbol": "601398", "name": "工商银行", "market": "cn"},
+    {"symbol": "601288", "name": "农业银行", "market": "cn"},
+    {"symbol": "601988", "name": "中国银行", "market": "cn"},
+    {"symbol": "601939", "name": "建设银行", "market": "cn"},
     {"symbol": "600030", "name": "中信证券", "market": "cn"},
+    {"symbol": "601688", "name": "华泰证券", "market": "cn"},
     {"symbol": "000001", "name": "平安银行", "market": "cn"},
+    {"symbol": "600000", "name": "浦发银行", "market": "cn"},
+    # === A-share — 科技 / 医药 ===
+    {"symbol": "002415", "name": "海康威视", "market": "cn"},
+    {"symbol": "000725", "name": "京东方A", "market": "cn"},
+    {"symbol": "002230", "name": "科大讯飞", "market": "cn"},
+    {"symbol": "688981", "name": "中芯国际", "market": "cn"},
+    {"symbol": "300059", "name": "东方财富", "market": "cn"},
+    {"symbol": "600276", "name": "恒瑞医药", "market": "cn"},
+    {"symbol": "300760", "name": "迈瑞医疗", "market": "cn"},
+    {"symbol": "603259", "name": "药明康德", "market": "cn"},
+    # === A-share — 能源 / 基建 ===
     {"symbol": "601899", "name": "紫金矿业", "market": "cn"},
-    # Crypto
+    {"symbol": "601857", "name": "中国石油", "market": "cn"},
+    {"symbol": "600028", "name": "中国石化", "market": "cn"},
+    {"symbol": "601088", "name": "中国神华", "market": "cn"},
+    {"symbol": "600019", "name": "宝钢股份", "market": "cn"},
+    {"symbol": "601186", "name": "中国铁建", "market": "cn"},
+    {"symbol": "601668", "name": "中国建筑", "market": "cn"},
+
+    # === Crypto ===
     {"symbol": "BTC-USD", "name": "Bitcoin", "market": "crypto"},
     {"symbol": "ETH-USD", "name": "Ethereum", "market": "crypto"},
     {"symbol": "SOL-USD", "name": "Solana", "market": "crypto"},
+    {"symbol": "BNB-USD", "name": "Binance Coin", "market": "crypto"},
+    {"symbol": "XRP-USD", "name": "XRP", "market": "crypto"},
+    {"symbol": "ADA-USD", "name": "Cardano", "market": "crypto"},
+    {"symbol": "DOGE-USD", "name": "Dogecoin", "market": "crypto"},
+    {"symbol": "AVAX-USD", "name": "Avalanche", "market": "crypto"},
+    {"symbol": "DOT-USD", "name": "Polkadot", "market": "crypto"},
+    {"symbol": "MATIC-USD", "name": "Polygon", "market": "crypto"},
+    {"symbol": "LINK-USD", "name": "Chainlink", "market": "crypto"},
+    {"symbol": "LTC-USD", "name": "Litecoin", "market": "crypto"},
 ]
 
-# Weighted market selection: US 60%, CN 30%, crypto 10%
-_MARKET_WEIGHTS = {"us": 0.60, "cn": 0.30, "crypto": 0.10}
+# Weighted market selection: US 55%, CN 35%, crypto 10%
+_MARKET_WEIGHTS = {"us": 0.55, "cn": 0.35, "crypto": 0.10}
 
 
 # ---------- Historical Data Cache ----------
@@ -232,17 +371,33 @@ def generate_question(mode: dict) -> Optional[dict]:
 
 
 def _public_view(q: dict, mode: dict) -> dict:
-    """Shape a question for sending to the client (strip truth)."""
-    anon = mode.get("anonymous", False)
+    """Shape a question for sending to the client (strip truth).
+
+    Blind mode is the stronger hiding mode: it strips ticker info AND replaces the
+    real timestamps with anonymized indices so the user can't identify the window.
+    """
+    blind = mode.get("blind", False)
+    anon = mode.get("anonymous", False) or blind  # blind implies anonymous
+    setup = q["setup"]
+    if blind:
+        # Replace real timestamps with synthetic daily indices starting at epoch,
+        # so the chart shows relative days instead of the real date axis.
+        base = 1577836800  # 2020-01-01 — neutral epoch, hides the real window
+        setup = [
+            {**c, "time": base + i * 86400}
+            for i, c in enumerate(setup)
+        ]
     return {
         "qid": q["qid"],
         "ticker_display": "???" if anon else q["ticker"],
-        "ticker_name": "Mystery Stock" if anon else q["ticker_name"],
+        "ticker_name": ("Mystery Stock" if anon else q["ticker_name"]),
         "market_display": "" if anon else q["market"],
         "cutoff_date": "hidden" if anon else q["cutoff_date"],
-        "setup": q["setup"],
+        "setup": setup,
         "horizon": mode["horizon"],
         "level": mode["level"],
+        "blind": blind,
+        "anonymous": anon,
     }
 
 
@@ -255,6 +410,7 @@ def start():
         horizon = int(data.get("horizon", 7))
         pool_size = int(data.get("pool_size", 5))
         anonymous = bool(data.get("anonymous", False))
+        blind = bool(data.get("blind", False))
     except (TypeError, ValueError):
         return jsonify({"error": "invalid mode"}), 400
 
@@ -270,6 +426,7 @@ def start():
         "horizon": horizon,
         "pool_size": pool_size,
         "anonymous": anonymous,
+        "blind": blind,
     }
     session = get_store().create(mode)
     return jsonify({
@@ -373,6 +530,7 @@ def submit(sid):
         "score": result["score"],
         "breakdown": result.get("breakdown", {}),
         "truth": q["truth"],
+        "setup_real": q["setup"],  # real timestamps for blind-mode re-reveal
         "ticker_reveal": {
             "symbol": q["ticker"],
             "name": q["ticker_name"],
