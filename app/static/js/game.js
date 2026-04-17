@@ -152,7 +152,7 @@
     },
   };
 
-  let LANG = localStorage.getItem('kronos_game_lang') || 'en';
+  let LANG = localStorage.getItem('kronos_game_lang') || 'zh';
   const t = (key) => (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key;
   const tf = (key, ...args) => {
     let s = t(key);
@@ -330,8 +330,7 @@
         borderColor: 'rgba(255,255,255,0.06)',
         timeVisible: true,
         secondsVisible: false,
-        barSpacing: 10,
-        rightOffset: 2,
+        rightOffset: 6,
       },
       crosshair: {
         mode: LightweightCharts.CrosshairMode.Normal,
@@ -648,7 +647,15 @@
       const realCandles = result.setup_real.map(c => ({
         time: c.time, open: c.open, high: c.high, low: c.low, close: c.close,
       }));
+      const realVolumes = result.setup_real.map(c => ({
+        time: c.time,
+        value: c.volume || 0,
+        color: (c.close >= c.open) ? 'rgba(74,222,128,0.4)' : 'rgba(248,113,113,0.4)',
+      }));
       State.candleSeries.setData(realCandles);
+      if (State.volumeSeries) State.volumeSeries.setData(realVolumes);
+      if (State.indicators) State.indicators.setData(realCandles);
+      if (State.drawTools) State.drawTools.clear();
       State.chart.timeScale().fitContent();
     }
 
@@ -933,6 +940,9 @@
       audio.volume = 0.3;
       audio.play().then(() => { playing = true; updateIcon(); }).catch(() => {});
     };
+
+    // Default: try to start music immediately
+    tryPlay();
 
     const updateIcon = () => {
       toggle.classList.toggle('active', playing);

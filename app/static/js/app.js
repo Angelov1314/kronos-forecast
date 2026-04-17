@@ -3,6 +3,47 @@
    ======================================================== */
 
 const API = '';
+
+// ---- i18n ----
+const I18N = {
+  en: {
+    playGame: 'Play Game', predict: 'Predict', watchlist: 'Watchlist',
+    vol: 'Vol', mktCap: 'Mkt Cap', wk52H: '52w H', wk52L: '52w L', sector: 'Sector',
+    forecastActive: 'Kronos Forecast Active', indicators: 'Indicators', draw: 'Draw',
+    kronosForecast: 'Kronos Forecast', horizon: 'Horizon', model: 'Model',
+    generateForecast: 'Generate Forecast', backtest: 'Backtest',
+    backtestDesc: 'Pick a cutoff date. Model sees only data before it, then predicts forward. Compare with reality.',
+    cutoffDate: 'Cutoff Date', predictForward: 'Predict Forward',
+    runBacktest: 'Run Backtest', trending: 'Trending', loading: 'Loading...',
+  },
+  zh: {
+    playGame: '预测小游戏', predict: '预测', watchlist: '自选',
+    vol: '成交量', mktCap: '市值', wk52H: '52周高', wk52L: '52周低', sector: '板块',
+    forecastActive: 'Kronos 预测已激活', indicators: '指标', draw: '画线',
+    kronosForecast: 'Kronos 预测', horizon: '预测天数', model: '模型',
+    generateForecast: '生成预测', backtest: '回测',
+    backtestDesc: '选择一个截止日期。模型只能看到此日期之前的数据，然后向前预测。与实际对比。',
+    cutoffDate: '截止日期', predictForward: '向前预测',
+    runBacktest: '运行回测', trending: '热门', loading: '加载中...',
+  },
+};
+let LANG = localStorage.getItem('kronos_lang') || 'zh';
+function t(key) { return (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key; }
+function applyI18N() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    el.textContent = t(k);
+  });
+  const lb = document.getElementById('langBtnText');
+  if (lb) lb.textContent = LANG === 'zh' ? 'EN' : '中文';
+  document.documentElement.lang = LANG;
+}
+function toggleLang() {
+  LANG = (LANG === 'zh') ? 'en' : 'zh';
+  localStorage.setItem('kronos_lang', LANG);
+  applyI18N();
+}
+
 let currentTicker = 'AAPL';
 let chart = null;
 let candleSeries = null;
@@ -18,6 +59,9 @@ let drawTools = null;
 
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
+  applyI18N();
+  const lb = document.getElementById('langBtn');
+  if (lb) lb.addEventListener('click', toggleLang);
   initChart();
   loadTicker('AAPL');
   loadTrending();
@@ -636,16 +680,24 @@ function initAudio() {
   audio.volume = 0.35;
   let playing = false;
 
+  const updateIcon = () => btn.classList.toggle('active', playing);
+  const tryPlay = () => {
+    audio.play().then(() => { playing = true; updateIcon(); }).catch(() => {});
+  };
+
   btn.addEventListener('click', () => {
     if (playing) {
       audio.pause();
       playing = false;
+      updateIcon();
     } else {
-      audio.play().catch(() => {});
-      playing = true;
+      tryPlay();
     }
-    btn.classList.toggle('active', playing);
   });
+
+  // Default on: attempt autoplay, fall back to first-click unlock
+  tryPlay();
+  document.addEventListener('click', () => { if (!playing) tryPlay(); }, { once: true });
 }
 
 // ---- Formatters ----
