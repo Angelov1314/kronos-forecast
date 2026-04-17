@@ -514,8 +514,8 @@
     const horizonLen = (q && q.horizon) ? q.horizon : 7;
     try {
       State.chart.timeScale().setVisibleLogicalRange({
-        from: -2,
-        to: candles.length + Math.max(horizonLen, 6) + 2,
+        from: 0,
+        to: candles.length + Math.max(horizonLen, 6) + 1,
       });
     } catch (_) {
       State.chart.timeScale().fitContent();
