@@ -546,19 +546,31 @@
     return new Promise((resolve) => {
       State.setupAnimating = true;
       const stagger = Math.max(12, Math.min(40, Math.floor(600 / Math.max(1, candles.length))));
+      const horizonLen = (State.currentQ && State.currentQ.horizon) ? State.currentQ.horizon : 7;
+      const lockRange = () => {
+        try {
+          State.chart.timeScale().setVisibleLogicalRange({
+            from: 0,
+            to: candles.length + Math.max(horizonLen, 6) + 1,
+          });
+        } catch (_) {}
+      };
       let i = 0;
       const tick = () => {
         if (i > candles.length) {
           State.setupAnimating = false;
+          lockRange();
           resolve();
           return;
         }
         State.candleSeries.setData(candles.slice(0, i));
         if (State.volumeSeries && volumes) State.volumeSeries.setData(volumes.slice(0, i));
+        lockRange();
         i += 1;
         if (i <= candles.length) setTimeout(tick, stagger);
         else {
           State.setupAnimating = false;
+          lockRange();
           resolve();
         }
       };
