@@ -13,6 +13,8 @@ let backtestPredSeries = null;
 let backtestCutoffLine = null;
 let currentPeriod = '6mo';
 let currentInterval = '1d';
+let indicatorMgr = null;
+let drawTools = null;
 
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
@@ -83,6 +85,77 @@ function initChart() {
     });
   });
   ro.observe(container);
+
+  // Indicators + drawing tools (shared modules)
+  if (window.IndicatorManager) indicatorMgr = new IndicatorManager(chart);
+  if (window.ChartDrawTools) drawTools = new ChartDrawTools(container, chart, candleSeries);
+  initMainToolbar();
+}
+
+function initMainToolbar() {
+  const tb = document.getElementById('mainChartToolbar');
+  if (!tb) return;
+
+  tb.querySelectorAll('[data-ind]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!indicatorMgr) return;
+      const ind = btn.dataset.ind;
+      if (ind === 'ma') {
+        const period = parseInt(btn.dataset.period);
+        btn.classList.toggle('active', indicatorMgr.toggleMA(period));
+      } else if (ind === 'bb') {
+        btn.classList.toggle('active', indicatorMgr.toggleBB(20, 2));
+      }
+    });
+  });
+
+  const addCustom = document.getElementById('mainCustomMAAdd');
+  const customInput = document.getElementById('mainCustomMAInput');
+  if (addCustom && customInput) {
+    const doAdd = () => {
+      const v = parseInt(customInput.value);
+      if (!v || v < 3 || v > 200) return;
+      if (!indicatorMgr) return;
+      const on = indicatorMgr.toggleMA(v);
+      const existing = tb.querySelector(`[data-ma-custom="${v}"]`);
+      if (on && !existing) {
+        const chip = document.createElement('button');
+        chip.className = 'toolbar-btn active';
+        chip.dataset.maCustom = v;
+        chip.textContent = `MA${v} ✕`;
+        chip.addEventListener('click', () => {
+          indicatorMgr.toggleMA(v);
+          chip.remove();
+        });
+        tb.querySelector('.toolbar-custom-ma').after(chip);
+      } else if (!on && existing) {
+        existing.remove();
+      }
+      customInput.value = '';
+    };
+    addCustom.addEventListener('click', doAdd);
+    customInput.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
+  }
+
+  const drawBtns = tb.querySelectorAll('[data-draw]');
+  drawBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!drawTools) return;
+      const mode = btn.dataset.draw;
+      const wasActive = btn.classList.contains('active');
+      drawBtns.forEach(b => b.classList.remove('active'));
+      if (wasActive) drawTools.setMode(null);
+      else {
+        btn.classList.add('active');
+        drawTools.setMode(mode);
+      }
+    });
+  });
+
+  const undoBtn = document.getElementById('mainDrawUndo');
+  if (undoBtn) undoBtn.addEventListener('click', () => drawTools && drawTools.undo());
+  const clearBtn = document.getElementById('mainDrawClear');
+  if (clearBtn) clearBtn.addEventListener('click', () => drawTools && drawTools.clear());
 }
 
 // ---- Load Ticker ----
@@ -149,19 +222,24 @@ function renderQuote(q) {
 function renderChart(data) {
   if (!data || data.length === 0) return;
 
-  candleSeries.setData(data.map(d => ({
+  const candles = data.map(d => ({
     time: d.time,
     open: d.open,
     high: d.high,
     low: d.low,
     close: d.close,
-  })));
+  }));
+  candleSeries.setData(candles);
 
   volumeSeries.setData(data.map(d => ({
     time: d.time,
     value: d.volume,
     color: d.close >= d.open ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)',
   })));
+
+  // Clear user drawings on ticker/period change; refresh indicators with new data
+  if (drawTools) drawTools.clear();
+  if (indicatorMgr) indicatorMgr.setData(candles);
 
   chart.timeScale().fitContent();
 }

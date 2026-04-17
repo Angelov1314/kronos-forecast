@@ -700,3 +700,89 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* --------- Chart Toolbar (indicators + drawing) --------- */
+.chart-toolbar-ext {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(0,0,0,0.18);
+  align-items: center;
+}
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.toolbar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+.toolbar-btn {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+}
+.toolbar-btn:hover {
+  background: rgba(142,202,230,0.08);
+  border-color: rgba(142,202,230,0.3);
+  color: rgba(255,255,255,0.95);
+}
+.toolbar-btn.active {
+  background: rgba(142,202,230,0.18);
+  border-color: rgba(142,202,230,0.55);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(142,202,230,0.25);
+}
+.toolbar-btn svg { display: block; }
+.toolbar-custom-ma input {
+  width: 38px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  outline: none;
+  padding: 0;
+}
+.toolbar-custom-ma input::-webkit-outer-spin-button,
+.toolbar-custom-ma input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.toolbar-add {
+  color: rgba(224,201,127,0.9);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 3px;
+}
+.toolbar-danger:hover {
+  background: rgba(240,130,130,0.12);
+  border-color: rgba(240,130,130,0.4);
+  color: #fff;
+}
+.chart-draw-helper-overlay {
+  overflow: visible;
+}
+@media (max-width: 900px) {
+  .chart-toolbar-ext { padding: 6px 8px; gap: 8px; }
+  .toolbar-label { display: none; }
+}

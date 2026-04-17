@@ -75,6 +75,9 @@
       failedNext: 'Next failed: ',
       failedSummary: 'Summary failed: ',
       langButton: '中文',
+      indicators: 'Indicators',
+      drawTools: 'Draw',
+      custom: 'MA?',
     },
     zh: {
       gameMode: '游戏模式',
@@ -143,6 +146,9 @@
       failedNext: '加载下一题失败: ',
       failedSummary: '加载总结失败: ',
       langButton: 'EN',
+      indicators: '指标',
+      drawTools: '画线',
+      custom: '自定义',
     },
   };
 
@@ -163,10 +169,13 @@
     scores: [],
     chart: null,
     candleSeries: null,
+    volumeSeries: null,
     truthSeries: null,
     drawOverlay: null,
+    indicators: null,   // IndicatorManager
+    drawTools: null,    // ChartDrawTools
     l1SliderValue: 0,
-    setupCandlesFull: [],   // full setup for staggered reveal
+    setupCandlesFull: [],
     setupAnimating: false,
   };
 
@@ -340,8 +349,31 @@
       wickDownColor: '#f08282',
     });
 
+    // Volume in bottom 20%
+    const volumeSeries = chart.addHistogramSeries({
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'volume',
+      color: 'rgba(142,202,230,0.35)',
+    });
+    chart.priceScale('volume').applyOptions({
+      scaleMargins: { top: 0.82, bottom: 0 },
+    });
+    chart.priceScale('right').applyOptions({
+      scaleMargins: { top: 0.05, bottom: 0.22 },
+    });
+
     State.chart = chart;
     State.candleSeries = candleSeries;
+    State.volumeSeries = volumeSeries;
+
+    // Indicators + draw tools (reusable modules)
+    if (window.IndicatorManager) {
+      State.indicators = new IndicatorManager(chart);
+    }
+    if (window.ChartDrawTools) {
+      State.drawTools = new ChartDrawTools(container, chart, candleSeries);
+    }
+    initToolbar();
 
     const ro = new ResizeObserver(() => {
       chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
@@ -442,12 +474,21 @@
     $('hudQIndex').textContent = `${data.index + 1} / ${data.total}`;
     $('hudProgress').style.width = `${(data.index / data.total) * 100}%`;
 
-    // Prepare full candle data
+    // Prepare full candle data + volume data
     const candles = q.setup.map(c => ({
       time: c.time,
       open: c.open, high: c.high, low: c.low, close: c.close,
     }));
+    const volumes = q.setup.map(c => ({
+      time: c.time,
+      value: c.volume || 0,
+      color: (c.close >= c.open) ? 'rgba(120,220,160,0.35)' : 'rgba(240,130,130,0.35)',
+    }));
     State.setupCandlesFull = candles;
+    State.setupVolumesFull = volumes;
+
+    // Clear any old drawing-tool helper lines from previous question
+    if (State.drawTools) State.drawTools.clear();
 
     // Clear existing truth overlay if any
     if (State.truthSeries) {
@@ -464,12 +505,17 @@
 
     // Set candle series to empty then animate draw-in
     State.candleSeries.setData([]);
+    if (State.volumeSeries) State.volumeSeries.setData([]);
     // Set visible range once using full data for a stable layout, then restart empty
     State.candleSeries.setData(candles);
+    if (State.volumeSeries) State.volumeSeries.setData(volumes);
     State.chart.timeScale().fitContent();
     // Now clear and animate staggered reveal
     State.candleSeries.setData([]);
-    animateSetupReveal(candles).then(() => {
+    if (State.volumeSeries) State.volumeSeries.setData([]);
+    // Update indicators with full data (so MA/BB are accurate after reveal)
+    if (State.indicators) State.indicators.setData(candles);
+    animateSetupReveal(candles, volumes).then(() => {
       // After animation, set up answer area + drawing overlay
       setupAnswerArea(q);
       requestAnimationFrame(() => {
@@ -486,10 +532,9 @@
     });
   }
 
-  function animateSetupReveal(candles) {
+  function animateSetupReveal(candles, volumes) {
     return new Promise((resolve) => {
       State.setupAnimating = true;
-      // Total animation ~800-1200ms across 30 candles — ~30ms stagger
       const stagger = Math.max(12, Math.min(40, Math.floor(600 / Math.max(1, candles.length))));
       let i = 0;
       const tick = () => {
@@ -499,6 +544,7 @@
           return;
         }
         State.candleSeries.setData(candles.slice(0, i));
+        if (State.volumeSeries && volumes) State.volumeSeries.setData(volumes.slice(0, i));
         i += 1;
         if (i <= candles.length) setTimeout(tick, stagger);
         else {
@@ -778,6 +824,80 @@
       `;
       list.appendChild(row);
     });
+  }
+
+  // ---------- Chart Toolbar (indicators + drawing) ----------
+  function initToolbar() {
+    const tb = $('chartToolbar');
+    if (!tb) return;
+
+    // MA + BB
+    tb.querySelectorAll('[data-ind]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!State.indicators) return;
+        const ind = btn.dataset.ind;
+        if (ind === 'ma') {
+          const period = parseInt(btn.dataset.period);
+          const on = State.indicators.toggleMA(period);
+          btn.classList.toggle('active', on);
+        } else if (ind === 'bb') {
+          const on = State.indicators.toggleBB(20, 2);
+          btn.classList.toggle('active', on);
+        }
+      });
+    });
+
+    // Custom MA add
+    const addCustom = $('customMAAdd');
+    const customInput = $('customMAInput');
+    if (addCustom && customInput) {
+      const doAdd = () => {
+        const v = parseInt(customInput.value);
+        if (!v || v < 3 || v > 200) return;
+        if (!State.indicators) return;
+        const on = State.indicators.toggleMA(v);
+        // Add/remove a chip next to input to show active status
+        const existing = tb.querySelector(`[data-ma-custom="${v}"]`);
+        if (on && !existing) {
+          const chip = document.createElement('button');
+          chip.className = 'toolbar-btn active';
+          chip.dataset.maCustom = v;
+          chip.textContent = `MA${v} ✕`;
+          chip.addEventListener('click', () => {
+            State.indicators.toggleMA(v);
+            chip.remove();
+          });
+          tb.querySelector('.toolbar-custom-ma').after(chip);
+        } else if (!on && existing) {
+          existing.remove();
+        }
+        customInput.value = '';
+      };
+      addCustom.addEventListener('click', doAdd);
+      customInput.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
+    }
+
+    // Drawing tools
+    const drawBtns = tb.querySelectorAll('[data-draw]');
+    drawBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!State.drawTools) return;
+        const mode = btn.dataset.draw;
+        const wasActive = btn.classList.contains('active');
+        drawBtns.forEach(b => b.classList.remove('active'));
+        if (wasActive) {
+          State.drawTools.setMode(null);
+        } else {
+          btn.classList.add('active');
+          State.drawTools.setMode(mode);
+        }
+      });
+    });
+
+    const undoBtn = $('drawUndo');
+    if (undoBtn) undoBtn.addEventListener('click', () => State.drawTools && State.drawTools.undo());
+    const clearBtn = $('drawClear');
+    if (clearBtn) clearBtn.addEventListener('click', () => State.drawTools && State.drawTools.clear());
   }
 
   // ---------- Event Wiring ----------
