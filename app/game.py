@@ -270,7 +270,7 @@ def get_history(symbol: str, market: str) -> Optional[pd.DataFrame]:
 
 
 # ---------- Random Window Picker ----------
-SETUP_LEN = 30  # 30 prior business days
+SETUP_LEN = 42  # ~2 months of prior business days
 MIN_EARLIEST = pd.Timestamp("2015-06-01")
 # Exclude very recent windows so the user doesn't have macro context
 EXCLUDE_RECENT_DAYS = 90

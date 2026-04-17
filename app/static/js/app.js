@@ -131,7 +131,7 @@ function initChart() {
   ro.observe(container);
 
   // Indicators + drawing tools (shared modules)
-  if (window.IndicatorManager) indicatorMgr = new IndicatorManager(chart);
+  if (window.IndicatorManager) indicatorMgr = new IndicatorManager(chart, container, candleSeries);
   if (window.ChartDrawTools) drawTools = new ChartDrawTools(container, chart, candleSeries);
   initMainToolbar();
 }

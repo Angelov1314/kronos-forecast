@@ -367,7 +367,7 @@
 
     // Indicators + draw tools (reusable modules)
     if (window.IndicatorManager) {
-      State.indicators = new IndicatorManager(chart);
+      State.indicators = new IndicatorManager(chart, container, candleSeries);
     }
     if (window.ChartDrawTools) {
       State.drawTools = new ChartDrawTools(container, chart, candleSeries);
@@ -505,10 +505,21 @@
     // Set candle series to empty then animate draw-in
     State.candleSeries.setData([]);
     if (State.volumeSeries) State.volumeSeries.setData([]);
-    // Set visible range once using full data for a stable layout, then restart empty
+    // Lock a visible logical range: setup on left, reserve horizon+padding on right.
+    // This both spreads bars wider AND shifts them left so reveal space appears right.
     State.candleSeries.setData(candles);
     if (State.volumeSeries) State.volumeSeries.setData(volumes);
-    State.chart.timeScale().fitContent();
+    // Spread setup bars across ~75% of the chart width, reserve ~25% on the
+    // right so the upcoming reveal has room to unfold without relayout.
+    const horizonLen = (q && q.horizon) ? q.horizon : 7;
+    try {
+      State.chart.timeScale().setVisibleLogicalRange({
+        from: -2,
+        to: candles.length + Math.max(horizonLen, 6) + 2,
+      });
+    } catch (_) {
+      State.chart.timeScale().fitContent();
+    }
     // Now clear and animate staggered reveal
     State.candleSeries.setData([]);
     if (State.volumeSeries) State.volumeSeries.setData([]);
