@@ -56,6 +56,8 @@ let currentPeriod = '6mo';
 let currentInterval = '1d';
 let indicatorMgr = null;
 let drawTools = null;
+let jiuzhuan = null;
+let jiuzhuanEnabled = false;
 
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
@@ -133,7 +135,89 @@ function initChart() {
   // Indicators + drawing tools (shared modules)
   if (window.IndicatorManager) indicatorMgr = new IndicatorManager(chart, container, candleSeries);
   if (window.ChartDrawTools) drawTools = new ChartDrawTools(container, chart, candleSeries);
+  if (window.JiuzhuanOverlay) jiuzhuan = new JiuzhuanOverlay(container, chart, candleSeries);
   initMainToolbar();
+  initJiuzhuanToggle();
+}
+
+function initJiuzhuanToggle() {
+  const btn = document.getElementById('btnJiuzhuan');
+  const card = document.getElementById('jiuzhuanCard');
+  if (!btn || !card) return;
+  btn.addEventListener('click', () => {
+    jiuzhuanEnabled = !jiuzhuanEnabled;
+    btn.classList.toggle('active', jiuzhuanEnabled);
+    card.style.display = jiuzhuanEnabled ? '' : 'none';
+    if (jiuzhuan) jiuzhuan.setEnabled(jiuzhuanEnabled);
+    if (jiuzhuanEnabled) refreshJiuzhuanCard();
+  });
+}
+
+function refreshJiuzhuanCard() {
+  if (!jiuzhuan) return;
+  const badge = document.getElementById('jzBadge');
+  const curEl = document.getElementById('jzCurrent');
+  const latestEl = document.getElementById('jzLatest9');
+  const countEl = document.getElementById('jzSignalCount');
+  const interp = document.getElementById('jzInterp');
+  if (!badge) return;
+
+  const sig = jiuzhuan.latestSignal();
+  const nines = jiuzhuan.allCompletedNines();
+  const zh = (typeof LANG !== 'undefined' && LANG === 'zh');
+
+  if (sig.kind === 'buy') {
+    badge.textContent = zh ? `买入·${sig.count}/9` : `Buy ${sig.count}/9`;
+    badge.className = 'jz-badge jz-buy';
+    curEl.textContent = zh
+      ? `低九买入结构 进行中 (${sig.count}/9)${sig.perfect ? ' · 完美9' : ''}`
+      : `Buy setup in progress (${sig.count}/9)${sig.perfect ? ' · Perfect 9' : ''}`;
+  } else if (sig.kind === 'sell') {
+    badge.textContent = zh ? `卖出·${sig.count}/9` : `Sell ${sig.count}/9`;
+    badge.className = 'jz-badge jz-sell';
+    curEl.textContent = zh
+      ? `高九卖出结构 进行中 (${sig.count}/9)${sig.perfect ? ' · 完美9' : ''}`
+      : `Sell setup in progress (${sig.count}/9)${sig.perfect ? ' · Perfect 9' : ''}`;
+  } else {
+    badge.textContent = zh ? '无' : 'None';
+    badge.className = 'jz-badge';
+    curEl.textContent = zh ? '暂无活跃九转结构' : 'No active setup';
+  }
+
+  const last9 = nines.length ? nines[nines.length - 1] : null;
+  if (last9 && jiuzhuan.candles[last9.index]) {
+    const bar = jiuzhuan.candles[last9.index];
+    const barsAgo = jiuzhuan.candles.length - 1 - last9.index;
+    const kind = last9.kind === 'buy' ? (zh ? '低九(买)' : 'Buy-9') : (zh ? '高九(卖)' : 'Sell-9');
+    const perfect = last9.perfect ? (zh ? ' · 完美' : ' · Perfect') : '';
+    latestEl.textContent = zh
+      ? `${kind}${perfect} · ${barsAgo}根K线前 · 收盘 ${bar.close.toFixed(2)}`
+      : `${kind}${perfect} · ${barsAgo} bars ago · close ${bar.close.toFixed(2)}`;
+  } else {
+    latestEl.textContent = zh ? '历史上无完整"9"计数' : 'No completed 9-count';
+  }
+
+  const buyN = nines.filter(n => n.kind === 'buy').length;
+  const sellN = nines.filter(n => n.kind === 'sell').length;
+  countEl.textContent = zh
+    ? `买入 ${buyN} · 卖出 ${sellN}`
+    : `Buy ${buyN} · Sell ${sellN}`;
+
+  if (interp) {
+    if (sig.kind === 'buy' && sig.count >= 7) {
+      interp.textContent = zh
+        ? `⚠ 低九买入结构接近完成 (${sig.count}/9)，注意潜在底部反弹信号${sig.perfect ? '（完美9已形成）' : ''}。`
+        : `⚠ Buy setup nearing completion (${sig.count}/9). Potential bottom reversal${sig.perfect ? ' (Perfect 9)' : ''}.`;
+    } else if (sig.kind === 'sell' && sig.count >= 7) {
+      interp.textContent = zh
+        ? `⚠ 高九卖出结构接近完成 (${sig.count}/9)，注意潜在顶部反转信号${sig.perfect ? '（完美9已形成）' : ''}。`
+        : `⚠ Sell setup nearing completion (${sig.count}/9). Potential top reversal${sig.perfect ? ' (Perfect 9)' : ''}.`;
+    } else {
+      interp.textContent = zh
+        ? '连续9根收盘价低于4根前为低九买入结构，反之为高九卖出结构。第9根带圆圈标记。'
+        : 'Buy setup = 9 closes below close-4-bars-ago. Sell setup = 9 closes above. The 9th bar is circled.';
+    }
+  }
 }
 
 function initMainToolbar() {
@@ -284,6 +368,10 @@ function renderChart(data) {
   // Clear user drawings on ticker/period change; refresh indicators with new data
   if (drawTools) drawTools.clear();
   if (indicatorMgr) indicatorMgr.setData(candles);
+  if (jiuzhuan) {
+    jiuzhuan.setData(candles);
+    if (jiuzhuanEnabled) refreshJiuzhuanCard();
+  }
 
   chart.timeScale().fitContent();
 }

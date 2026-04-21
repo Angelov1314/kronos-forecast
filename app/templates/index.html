@@ -131,6 +131,7 @@
             <button class="toolbar-btn" data-ind="ma" data-period="10">MA10</button>
             <button class="toolbar-btn" data-ind="ma" data-period="20">MA20</button>
             <button class="toolbar-btn" data-ind="bb">BOLL</button>
+            <button class="toolbar-btn" id="btnJiuzhuan" title="神奇九转 / TD Sequential">九转</button>
           </div>
           <div class="toolbar-group">
             <span class="toolbar-label" data-i18n="draw">Draw</span>
@@ -150,6 +151,27 @@
 
         <div id="chartContainer" class="chart-container"></div>
         <div class="chart-watermark">KRONOS</div>
+        <div class="jiuzhuan-card" id="jiuzhuanCard" style="display:none">
+          <div class="jz-head">
+            <span class="jz-title" data-i18n="jiuzhuanTitle">神奇九转 · TD Sequential</span>
+            <span class="jz-badge" id="jzBadge">—</span>
+          </div>
+          <div class="jz-body">
+            <div class="jz-stat">
+              <span class="jz-label" data-i18n="jzCurrent">当前结构</span>
+              <span class="jz-value" id="jzCurrent">—</span>
+            </div>
+            <div class="jz-stat">
+              <span class="jz-label" data-i18n="jzLatest9">最近一次"9"</span>
+              <span class="jz-value" id="jzLatest9">—</span>
+            </div>
+            <div class="jz-stat">
+              <span class="jz-label" data-i18n="jzSignals">历史9计数</span>
+              <span class="jz-value" id="jzSignalCount">—</span>
+            </div>
+          </div>
+          <div class="jz-interp" id="jzInterp" data-i18n="jzHint">— 连续9根收盘价低于4根前的收盘价形成买入结构（低九），反之为卖出结构（高九）。</div>
+        </div>
       </section>
 
       <!-- Prediction Panel -->
@@ -234,6 +256,7 @@
 
   <script src="/static/js/chart-indicators.js"></script>
   <script src="/static/js/chart-drawtools.js"></script>
+  <script src="/static/js/chart-jiuzhuan.js"></script>
   <script src="/static/js/app.js"></script>
 </body>
 </html>
