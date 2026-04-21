@@ -626,8 +626,15 @@ def _fetch_cnn_fgi():
     """Unofficial CNN Fear & Greed Index endpoint."""
     url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
     req = urllib.request.Request(url, headers={
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.cnn.com/",
+        "Origin": "https://www.cnn.com",
+        "Sec-Fetch-Site": "same-site",
+        "Sec-Fetch-Mode": "cors",
     })
     with urllib.request.urlopen(req, timeout=10) as resp:
         return json.loads(resp.read().decode('utf-8'))
