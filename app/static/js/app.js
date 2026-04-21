@@ -148,9 +148,82 @@ function initJiuzhuanToggle() {
     jiuzhuanEnabled = !jiuzhuanEnabled;
     btn.classList.toggle('active', jiuzhuanEnabled);
     card.style.display = jiuzhuanEnabled ? '' : 'none';
+    const banner = document.getElementById('jzBanner');
+    if (banner) banner.style.display = jiuzhuanEnabled ? '' : 'none';
     if (jiuzhuan) jiuzhuan.setEnabled(jiuzhuanEnabled);
-    if (jiuzhuanEnabled) refreshJiuzhuanCard();
+    if (jiuzhuanEnabled) {
+      refreshJiuzhuanCard();
+      refreshJiuzhuanBanner();
+    }
   });
+}
+
+function refreshJiuzhuanBanner() {
+  if (!jiuzhuan) return;
+  const banner = document.getElementById('jzBanner');
+  if (!banner) return;
+  const advice = jiuzhuan.tradingAdvice();
+  if (!advice) return;
+
+  const zh = (typeof LANG !== 'undefined' && LANG === 'zh');
+  const fmt = (v) => (v == null || isNaN(v)) ? '—' : v.toFixed(2);
+  const pct = (tp, price) => {
+    if (tp == null || !price) return '';
+    const p = ((tp - price) / price) * 100;
+    return ` (${p >= 0 ? '+' : ''}${p.toFixed(1)}%)`;
+  };
+
+  const kindLabel = {
+    buy:     zh ? '低九买入' : 'Buy Setup',
+    sell:    zh ? '高九卖出' : 'Sell Setup',
+    neutral: zh ? '无明确结构' : 'No Setup',
+  }[advice.kind];
+
+  const actionLabel = {
+    strongBuy:  zh ? '强买入信号' : 'Strong Buy',
+    buy:        zh ? '买入信号'   : 'Buy',
+    watchBuy:   zh ? '关注做多'   : 'Watch Long',
+    strongSell: zh ? '强卖出信号' : 'Strong Sell',
+    sell:       zh ? '卖出信号'   : 'Sell',
+    watchSell:  zh ? '关注做空'   : 'Watch Short',
+    holdUp:     zh ? '趋势向上 · 持有' : 'Trend Up · Hold',
+    holdDown:   zh ? '趋势向下 · 观望' : 'Trend Down · Wait',
+  }[advice.action] || '—';
+
+  document.getElementById('jzBannerKind').textContent = kindLabel;
+  const actEl = document.getElementById('jzBannerAction');
+  actEl.textContent = actionLabel;
+  actEl.className = 'jz-banner-action';
+  if (advice.direction > 0.5) actEl.classList.add('jz-up');
+  else if (advice.direction < -0.5) actEl.classList.add('jz-down');
+
+  document.getElementById('jzBannerPrice').textContent = fmt(advice.price);
+  document.getElementById('jzBannerAtr').textContent = fmt(advice.atr);
+
+  document.getElementById('jzTp1').textContent = advice.targets['1d'] != null
+    ? `${fmt(advice.targets['1d'])}${pct(advice.targets['1d'], advice.price)}` : '—';
+  document.getElementById('jzTp3').textContent = advice.targets['3d'] != null
+    ? `${fmt(advice.targets['3d'])}${pct(advice.targets['3d'], advice.price)}` : '—';
+  document.getElementById('jzTp7').textContent = advice.targets['7d'] != null
+    ? `${fmt(advice.targets['7d'])}${pct(advice.targets['7d'], advice.price)}` : '—';
+  document.getElementById('jzSl').textContent = advice.stopLoss != null
+    ? `${fmt(advice.stopLoss)}${pct(advice.stopLoss, advice.price)}` : '—';
+
+  // Short narrative
+  const note = document.getElementById('jzBannerNote');
+  if (advice.kind === 'buy') {
+    note.textContent = zh
+      ? `✦ 买入结构进行至 ${advice.signal.count}/9${advice.signal.perfect ? '（完美9）' : ''}，目标基于 ATR=${fmt(advice.atr)} 设定。跌破止损应离场。`
+      : `Buy setup ${advice.signal.count}/9${advice.signal.perfect ? ' (Perfect)' : ''}. Targets scaled by ATR=${fmt(advice.atr)}. Exit below stop.`;
+  } else if (advice.kind === 'sell') {
+    note.textContent = zh
+      ? `✦ 卖出结构进行至 ${advice.signal.count}/9${advice.signal.perfect ? '（完美9）' : ''}，做空/减仓目标已列出。涨破止损应离场。`
+      : `Sell setup ${advice.signal.count}/9${advice.signal.perfect ? ' (Perfect)' : ''}. Short/exit targets listed. Stop if breaks above.`;
+  } else {
+    note.textContent = zh
+      ? `目前无明确九转结构；均线偏${advice.trendUp ? '多' : '空'}，建议观望直至结构出现。`
+      : `No active TD structure; trend is ${advice.trendUp ? 'up' : 'down'}. Wait for a setup to form.`;
+  }
 }
 
 function refreshJiuzhuanCard() {
@@ -370,7 +443,10 @@ function renderChart(data) {
   if (indicatorMgr) indicatorMgr.setData(candles);
   if (jiuzhuan) {
     jiuzhuan.setData(candles);
-    if (jiuzhuanEnabled) refreshJiuzhuanCard();
+    if (jiuzhuanEnabled) {
+      refreshJiuzhuanCard();
+      refreshJiuzhuanBanner();
+    }
   }
 
   chart.timeScale().fitContent();

@@ -110,6 +110,103 @@
       return { kind: null, count: 0, perfect: false };
     }
 
+    // Average true range over last `period` bars
+    atr(period = 14) {
+      const c = this.candles;
+      if (c.length < 2) return 0;
+      const n = Math.min(period, c.length - 1);
+      let sum = 0;
+      for (let i = c.length - n; i < c.length; i++) {
+        const tr = Math.max(
+          c[i].high - c[i].low,
+          Math.abs(c[i].high - c[i - 1].close),
+          Math.abs(c[i].low - c[i - 1].close)
+        );
+        sum += tr;
+      }
+      return sum / n;
+    }
+
+    // Generate 1d / 3d / 7d trading advice based on current signal + ATR.
+    // Pure heuristic, intentionally simple — caller formats for display.
+    tradingAdvice() {
+      const sig = this.latestSignal();
+      const last = this.candles[this.candles.length - 1];
+      if (!last) return null;
+      const price = last.close;
+      const atr = this.atr(14);
+      if (!atr) return null;
+
+      // Trend bias: positive if recent 5-bar close > 20-bar SMA, else negative
+      const n = this.candles.length;
+      const sma20 = n >= 20
+        ? this.candles.slice(-20).reduce((s, c) => s + c.close, 0) / 20
+        : price;
+      const sma5 = n >= 5
+        ? this.candles.slice(-5).reduce((s, c) => s + c.close, 0) / 5
+        : price;
+      const trendUp = sma5 > sma20;
+
+      // Build advice by kind
+      let kind = 'neutral';
+      let action = null;
+      let direction = 0; // +1 long, -1 short, 0 wait
+      let strength = 0;  // 0..1
+
+      if (sig.kind === 'buy' && sig.count >= 7) {
+        kind = 'buy';
+        direction = +1;
+        strength = Math.min(1, (sig.count - 6) / 3) + (sig.perfect ? 0.2 : 0);
+        action = sig.count === 9
+          ? (sig.perfect ? 'strongBuy' : 'buy')
+          : 'watchBuy';
+      } else if (sig.kind === 'sell' && sig.count >= 7) {
+        kind = 'sell';
+        direction = -1;
+        strength = Math.min(1, (sig.count - 6) / 3) + (sig.perfect ? 0.2 : 0);
+        action = sig.count === 9
+          ? (sig.perfect ? 'strongSell' : 'sell')
+          : 'watchSell';
+      } else {
+        kind = 'neutral';
+        direction = trendUp ? +0.3 : -0.3;
+        strength = 0;
+        action = trendUp ? 'holdUp' : 'holdDown';
+      }
+
+      // Targets: ATR-based multipliers
+      const mkTarget = (mult) => {
+        if (direction === 0) return { tp: null, sl: null };
+        return {
+          tp: price + direction * mult * atr,
+        };
+      };
+
+      const t1 = mkTarget(0.8);
+      const t3 = mkTarget(1.8);
+      const t7 = mkTarget(3.0);
+
+      // Stop loss: recent swing low (buy) / swing high (sell)
+      const look = Math.min(10, this.candles.length);
+      let sl = null;
+      if (direction > 0) {
+        sl = Math.min(...this.candles.slice(-look).map(c => c.low)) - 0.3 * atr;
+      } else if (direction < 0) {
+        sl = Math.max(...this.candles.slice(-look).map(c => c.high)) + 0.3 * atr;
+      }
+
+      return {
+        kind, action, direction, strength,
+        price, atr,
+        trendUp,
+        signal: sig,
+        targets: {
+          '1d': t1.tp, '3d': t3.tp, '7d': t7.tp,
+        },
+        stopLoss: sl,
+      };
+    }
+
     // Find all completed 9-count setups in the series.
     allCompletedNines() {
       const res = [];
@@ -141,6 +238,9 @@
       for (let i = 0; i < this.candles.length; i++) {
         const cnt = this.counts[i];
         if (!cnt || (cnt.buy === 0 && cnt.sell === 0)) continue;
+        // DeMark convention: only render counts >= 6 to reduce visual clutter
+        if (cnt.buy > 0 && cnt.buy < 6) continue;
+        if (cnt.sell > 0 && cnt.sell < 6) continue;
         const c = this.candles[i];
         const x = ts.timeToCoordinate(c.time);
         if (x == null) continue;

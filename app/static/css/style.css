@@ -909,3 +909,100 @@ body {
   padding-top: 8px;
   border-top: 1px dashed rgba(255,255,255,0.08);
 }
+
+/* ==== 神奇九转 Banner (bottom-left chart overlay) ==== */
+.chart-panel { position: relative; }
+.jz-banner {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 14;
+  min-width: 260px;
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(15,22,34,0.85) 0%, rgba(10,15,24,0.92) 100%);
+  border: 1px solid rgba(224, 201, 127, 0.22);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  backdrop-filter: blur(18px);
+  font-family: 'Outfit', sans-serif;
+  color: rgba(255,255,255,0.85);
+  pointer-events: auto;
+}
+.jz-banner-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.jz-banner-title {
+  font-size: 12px; font-weight: 500;
+  color: rgba(224,201,127,0.88);
+  letter-spacing: 0.5px;
+}
+.jz-banner-action {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.jz-banner-action.jz-up {
+  background: rgba(74,222,128,0.18);
+  color: #78dca0;
+  border-color: rgba(74,222,128,0.45);
+}
+.jz-banner-action.jz-down {
+  background: rgba(248,113,113,0.18);
+  color: #f08282;
+  border-color: rgba(248,113,113,0.45);
+}
+.jz-banner-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: rgba(255,255,255,0.65);
+}
+.jz-banner-row .jz-k {
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.jz-banner-row .jz-v {
+  color: rgba(255,255,255,0.9);
+  margin-right: 4px;
+}
+.jz-banner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.jz-cell {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.jz-cell-t {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+.jz-cell-v {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: rgba(120,220,160,0.95);
+}
+.jz-cell.jz-sl .jz-cell-v {
+  color: rgba(240,130,130,0.95);
+}
+.jz-banner-note {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.55);
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+}
