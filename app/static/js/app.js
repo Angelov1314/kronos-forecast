@@ -371,6 +371,8 @@ async function loadTicker(ticker) {
     const kind = activeTab ? activeTab.dataset.sent : 'sentiment';
     if (kind === 'sentiment' || kind === 'earnings') {
       loadSentiment(currentTicker, kind);
+    } else if (kind === 'insights') {
+      loadInsights(currentTicker);
     }
   }
 
@@ -917,6 +919,7 @@ function initSentimentPanel() {
       if (k === 'sentiment') loadSentiment(currentTicker, 'sentiment');
       else if (k === 'earnings') loadSentiment(currentTicker, 'earnings');
       else if (k === 'fgi') loadFgi('stocks');
+      else if (k === 'insights') loadInsights(currentTicker);
     });
   });
 
@@ -929,8 +932,112 @@ function initSentimentPanel() {
     });
   });
 
-  // Pre-load
-  loadSentiment(currentTicker, 'sentiment');
+  // Refresh button
+  const refreshBtn = document.getElementById('aiRefreshBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => loadInsights(currentTicker, true));
+  }
+
+  // Pre-load insights (default active tab)
+  loadInsights(currentTicker);
+}
+
+async function loadInsights(ticker, forceRefresh = false) {
+  const thesisEl = document.getElementById('aiThesis');
+  const biasEl = document.getElementById('aiBias');
+  const confFill = document.getElementById('aiConfFill');
+  const confLabel = document.getElementById('aiConfLabel');
+  const actionEl = document.getElementById('aiAction');
+  const actionCard = document.getElementById('aiActionCard');
+  const riskEl = document.getElementById('aiRisk');
+  const horizonEl = document.getElementById('aiHorizon');
+  const bullList = document.getElementById('aiBullList');
+  const bearList = document.getElementById('aiBearList');
+  const catList = document.getElementById('aiCatList');
+  const modelEl = document.getElementById('aiModel');
+  if (!thesisEl) return;
+
+  const zh = (typeof LANG !== 'undefined' && LANG === 'zh');
+  thesisEl.textContent = zh ? '正在调用 Claude 分析新闻...' : 'Asking Claude to analyze the news...';
+  biasEl.textContent = '—'; biasEl.className = 'ai-bias';
+  confFill.style.width = '0%';
+  confLabel.textContent = '—';
+  actionEl.textContent = '—';
+  actionCard.className = 'ai-action-card';
+  riskEl.textContent = '—';
+  horizonEl.textContent = '—';
+  bullList.innerHTML = ''; bearList.innerHTML = ''; catList.innerHTML = '';
+
+  try {
+    const url = `${API}/api/insights/${encodeURIComponent(ticker)}${forceRefresh ? '?refresh=1' : ''}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) {
+      thesisEl.innerHTML = `<span class="sent-err">${escapeHtml(data.error)}</span>`;
+      return;
+    }
+    const ins = data.insights || {};
+
+    modelEl.textContent = (data.model || 'Sonnet').replace('claude-', '').replace(/-\d{8}$/, '');
+
+    const bias = (ins.bias || 'neutral').toLowerCase();
+    const biasLabel = {
+      bullish: zh ? '看多' : 'Bullish',
+      bearish: zh ? '看空' : 'Bearish',
+      neutral: zh ? '中性' : 'Neutral',
+    }[bias] || '—';
+    biasEl.textContent = biasLabel;
+    biasEl.className = 'ai-bias ai-' + bias;
+
+    const conf = Math.max(0, Math.min(100, ins.confidence || 0));
+    confFill.style.width = conf + '%';
+    confFill.className = 'ai-conf-fill ai-' + bias;
+    confLabel.textContent = `${conf}% ${zh ? '置信' : 'conf'}`;
+
+    thesisEl.textContent = zh
+      ? (ins.thesis_zh || ins.thesis_en || '—')
+      : (ins.thesis_en || ins.thesis_zh || '—');
+
+    actionEl.textContent = zh
+      ? (ins.action_zh || ins.action_en || '—')
+      : (ins.action_en || ins.action_zh || '—');
+    actionCard.className = 'ai-action-card ai-' + bias;
+
+    const riskMap = {
+      low: zh ? '低风险' : 'Low Risk',
+      medium: zh ? '中风险' : 'Medium Risk',
+      high: zh ? '高风险' : 'High Risk',
+    };
+    riskEl.textContent = riskMap[(ins.risk_level || '').toLowerCase()] || '—';
+    riskEl.className = 'ai-chip risk-' + (ins.risk_level || 'medium').toLowerCase();
+
+    const horizonMap = {
+      short: zh ? '短线 (1-7天)' : 'Short (1-7d)',
+      medium: zh ? '中线 (1-4周)' : 'Medium (1-4w)',
+      long: zh ? '长线 (>1月)' : 'Long (>1m)',
+    };
+    horizonEl.textContent = horizonMap[(ins.horizon || '').toLowerCase()] || '—';
+
+    const pushList = (el, arr) => {
+      (arr || []).forEach(x => {
+        const li = document.createElement('li');
+        li.textContent = x;
+        el.appendChild(li);
+      });
+      if (!(arr || []).length) {
+        const li = document.createElement('li');
+        li.className = 'ai-empty';
+        li.textContent = zh ? '（无）' : '(none)';
+        el.appendChild(li);
+      }
+    };
+    pushList(bullList, ins.bullish_factors);
+    pushList(bearList, ins.bearish_factors);
+    pushList(catList, ins.catalysts);
+
+  } catch (e) {
+    thesisEl.textContent = (zh ? '加载失败: ' : 'Load failed: ') + e;
+  }
 }
 
 async function loadSentiment(ticker, kind) {

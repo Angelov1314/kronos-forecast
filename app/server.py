@@ -618,6 +618,178 @@ def tavily_sentiment(ticker):
     return jsonify(out)
 
 
+# ---------- AI Insights (Anthropic Sonnet) ----------
+_INSIGHTS_CACHE = {}
+_INSIGHTS_TTL = 1800  # 30 min
+
+_INSIGHTS_SYSTEM = (
+    "You are a sharp, concise equity analyst. You read raw news items and output "
+    "actionable insights for a trader in STRICT JSON. Never hedge with disclaimers. "
+    "Base the bias on the net weight of evidence in the provided news — "
+    "ignore stale or irrelevant items."
+)
+
+def _call_anthropic(messages, system=None, max_tokens=1200, model="claude-sonnet-4-5"):
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+    if not api_key:
+        return None, "ANTHROPIC_API_KEY not set on server"
+    body = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "messages": messages,
+    }
+    if system:
+        body["system"] = system
+    data = json.dumps(body).encode('utf-8')
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=data,
+        headers={
+            "content-type": "application/json",
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            return json.loads(resp.read().decode('utf-8')), None
+    except urllib.error.HTTPError as e:
+        return None, f"Anthropic HTTP {e.code}: {e.read().decode('utf-8','ignore')[:300]}"
+    except Exception as e:
+        return None, f"Anthropic request failed: {e}"
+
+
+def _format_news_block(items, limit=6):
+    lines = []
+    for r in (items or [])[:limit]:
+        title = (r.get('title') or '').strip()
+        snippet = (r.get('content') or '').strip().replace('\n', ' ')[:260]
+        date = r.get('published_date') or ''
+        host = ''
+        try:
+            host = urllib.parse.urlparse(r.get('url', '')).netloc.replace('www.', '')
+        except Exception:
+            pass
+        lines.append(f"- ({date[:10]} · {host}) {title}\n    {snippet}")
+    return '\n'.join(lines) if lines else '(no news)'
+
+
+def _build_insights_prompt(ticker, name, sentiment_items, earnings_items):
+    return (
+        f"Target: {name} ({ticker})\n\n"
+        f"RECENT MARKET-SENTIMENT NEWS:\n{_format_news_block(sentiment_items)}\n\n"
+        f"EARNINGS / CATALYST NEWS:\n{_format_news_block(earnings_items, limit=5)}\n\n"
+        "Output strict JSON with this exact shape — no markdown, no code fence:\n"
+        "{\n"
+        '  "bias": "bullish" | "bearish" | "neutral",\n'
+        '  "confidence": 0-100,\n'
+        '  "thesis_zh": "一句话中文投资逻辑, ≤60字",\n'
+        '  "thesis_en": "one-sentence English thesis, ≤25 words",\n'
+        '  "bullish_factors": ["中文要点1", "..."],  // 2-4 items, each <60 chars\n'
+        '  "bearish_factors": ["中文要点1", "..."],  // 2-4 items, each <60 chars\n'
+        '  "catalysts": ["即将发布财报 / 新品 / 政策等事件, 含时间", "..."],\n'
+        '  "action_zh": "具体交易建议 (例: 逢低吸纳, 观望, 减仓止盈, 做空对冲)",\n'
+        '  "action_en": "specific trading action",\n'
+        '  "risk_level": "low" | "medium" | "high",\n'
+        '  "horizon": "short" | "medium" | "long"\n'
+        "}\n"
+        "If news is insufficient, still pick best-guess bias with low confidence. "
+        "All Chinese fields must be in Simplified Chinese."
+    )
+
+
+@app.route('/api/insights/<ticker>')
+def ai_insights(ticker):
+    ticker = ticker.upper().strip()
+    now = datetime.utcnow().timestamp()
+    cached = _INSIGHTS_CACHE.get(ticker)
+    if cached and (now - cached[0]) < _INSIGHTS_TTL and not request.args.get('refresh'):
+        return jsonify({**cached[1], 'cached': True})
+
+    # Resolve company name
+    name = ticker
+    try:
+        info = yf.Ticker(ticker).info
+        name = info.get('longName') or info.get('shortName') or ticker
+    except Exception:
+        pass
+
+    # Fetch (or reuse cached) Tavily news for both kinds
+    def get_news(kind):
+        key = (ticker, kind)
+        c = _TAVILY_CACHE.get(key)
+        if c and (now - c[0]) < _TAVILY_TTL:
+            return c[1].get('results') or []
+        year = datetime.utcnow().year
+        q = (f"{name} ({ticker}) next earnings date {year} analyst expectations"
+             if kind == 'earnings'
+             else f"{name} ({ticker}) stock market sentiment news analyst recent")
+        data = _tavily_search(q, max_results=6, topic="news")
+        if 'error' in data:
+            return []
+        results = [{
+            'title': r.get('title', ''),
+            'url': r.get('url', ''),
+            'content': r.get('content', ''),
+            'published_date': r.get('published_date', ''),
+        } for r in (data.get('results') or [])]
+        _TAVILY_CACHE[key] = (now, {
+            'ticker': ticker, 'name': name, 'kind': kind,
+            'query': q, 'summary': data.get('answer') or '',
+            'results': results,
+        })
+        return results
+
+    sentiment_news = get_news('sentiment')
+    earnings_news = get_news('earnings')
+
+    if not sentiment_news and not earnings_news:
+        return jsonify({'error': 'No news available (check Tavily key)'}), 502
+
+    prompt = _build_insights_prompt(ticker, name, sentiment_news, earnings_news)
+    resp, err = _call_anthropic(
+        messages=[{"role": "user", "content": prompt}],
+        system=_INSIGHTS_SYSTEM,
+        max_tokens=1200,
+    )
+    if err:
+        return jsonify({'error': err}), 502
+
+    # Extract text
+    text = ''
+    for block in (resp.get('content') or []):
+        if block.get('type') == 'text':
+            text += block.get('text', '')
+    text = text.strip()
+    # Strip possible code fences just in case
+    if text.startswith('```'):
+        text = re.sub(r'^```(?:json)?\s*|\s*```$', '', text, flags=re.MULTILINE).strip()
+
+    try:
+        insights = json.loads(text)
+    except Exception as e:
+        return jsonify({'error': f'model output parse failed: {e}', 'raw': text[:500]}), 502
+
+    usage = resp.get('usage') or {}
+    out = {
+        'ticker': ticker,
+        'name': name,
+        'insights': insights,
+        'model': resp.get('model', 'claude-sonnet-4-5'),
+        'usage': {
+            'input_tokens': usage.get('input_tokens'),
+            'output_tokens': usage.get('output_tokens'),
+        },
+        'news_counts': {
+            'sentiment': len(sentiment_news),
+            'earnings': len(earnings_news),
+        },
+        'cached': False,
+    }
+    _INSIGHTS_CACHE[ticker] = (now, out)
+    return jsonify(out)
+
+
 # ---------- Fear & Greed Index ----------
 _FGI_CACHE = {'stocks': (0, None), 'crypto': (0, None)}
 _FGI_TTL = 600  # 10 min

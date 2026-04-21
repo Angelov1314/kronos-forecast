@@ -259,9 +259,48 @@
       <!-- Sentiment + F&G Panel -->
       <section class="panel sentiment-panel liquid-glass" id="sentimentPanel">
         <div class="sentiment-tabs">
-          <button class="sent-tab active" data-sent="sentiment" data-i18n="tabSentiment">市场情绪</button>
+          <button class="sent-tab active" data-sent="insights" data-i18n="tabInsights">AI 洞察</button>
+          <button class="sent-tab" data-sent="sentiment" data-i18n="tabSentiment">市场情绪</button>
           <button class="sent-tab" data-sent="earnings" data-i18n="tabEarnings">财报动态</button>
           <button class="sent-tab" data-sent="fgi" data-i18n="tabFgi">恐惧贪婪</button>
+        </div>
+
+        <!-- AI Insights (Claude Sonnet) -->
+        <div class="sent-pane active" id="sentPaneInsights">
+          <div class="ai-head">
+            <span class="ai-model" id="aiModel">Sonnet</span>
+            <button class="ai-refresh" id="aiRefreshBtn" title="重新生成">↻</button>
+          </div>
+          <div class="ai-bias-row">
+            <div class="ai-bias" id="aiBias">—</div>
+            <div class="ai-conf">
+              <div class="ai-conf-bar"><div class="ai-conf-fill" id="aiConfFill"></div></div>
+              <span class="ai-conf-label" id="aiConfLabel">—</span>
+            </div>
+          </div>
+          <div class="ai-thesis" id="aiThesis">正在调用 Claude 分析...</div>
+          <div class="ai-action-card" id="aiActionCard">
+            <div class="ai-action-label">建议操作</div>
+            <div class="ai-action-text" id="aiAction">—</div>
+            <div class="ai-action-meta">
+              <span class="ai-chip" id="aiRisk">—</span>
+              <span class="ai-chip" id="aiHorizon">—</span>
+            </div>
+          </div>
+          <div class="ai-factors">
+            <div class="ai-factor-col ai-bull">
+              <div class="ai-factor-title">✦ 利多</div>
+              <ul class="ai-list" id="aiBullList"></ul>
+            </div>
+            <div class="ai-factor-col ai-bear">
+              <div class="ai-factor-title">✦ 利空</div>
+              <ul class="ai-list" id="aiBearList"></ul>
+            </div>
+          </div>
+          <div class="ai-cat">
+            <div class="ai-cat-title">⏱ 即将到来的催化剂</div>
+            <ul class="ai-list" id="aiCatList"></ul>
+          </div>
         </div>
 
         <!-- Sentiment / Earnings view (Tavily) -->
