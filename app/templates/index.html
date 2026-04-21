@@ -256,6 +256,51 @@
         <div class="backtest-result" id="backtestResult"></div>
       </section>
 
+      <!-- Sentiment + F&G Panel -->
+      <section class="panel sentiment-panel liquid-glass" id="sentimentPanel">
+        <div class="sentiment-tabs">
+          <button class="sent-tab active" data-sent="sentiment" data-i18n="tabSentiment">市场情绪</button>
+          <button class="sent-tab" data-sent="earnings" data-i18n="tabEarnings">财报动态</button>
+          <button class="sent-tab" data-sent="fgi" data-i18n="tabFgi">恐惧贪婪</button>
+        </div>
+
+        <!-- Sentiment / Earnings view (Tavily) -->
+        <div class="sent-pane active" id="sentPaneSentiment">
+          <div class="sent-summary" id="sentSummary" data-i18n="sentLoading">正在加载...</div>
+          <div class="sent-results" id="sentResults"></div>
+        </div>
+        <div class="sent-pane" id="sentPaneEarnings">
+          <div class="sent-summary" id="earnSummary" data-i18n="sentLoading">正在加载...</div>
+          <div class="sent-results" id="earnResults"></div>
+        </div>
+
+        <!-- Fear & Greed -->
+        <div class="sent-pane" id="sentPaneFgi">
+          <div class="fgi-toggle">
+            <button class="fgi-btn active" data-fgi="stocks">股票</button>
+            <button class="fgi-btn" data-fgi="crypto">加密</button>
+          </div>
+          <div class="fgi-gauge">
+            <svg viewBox="0 0 200 120" class="fgi-svg">
+              <!-- Arc segments 0-25 fear, 25-45 fear, 45-55 neutral, 55-75 greed, 75-100 extreme -->
+              <path d="M 20 110 A 80 80 0 0 1 58 44" stroke="#f08282" stroke-width="14" fill="none"/>
+              <path d="M 58 44 A 80 80 0 0 1 100 30" stroke="#e8a66f" stroke-width="14" fill="none"/>
+              <path d="M 100 30 A 80 80 0 0 1 142 44" stroke="#e0c97f" stroke-width="14" fill="none"/>
+              <path d="M 142 44 A 80 80 0 0 1 180 110" stroke="#78dca0" stroke-width="14" fill="none"/>
+              <!-- Needle -->
+              <line id="fgiNeedle" x1="100" y1="110" x2="100" y2="38"
+                    stroke="#fff" stroke-width="2.5" stroke-linecap="round"
+                    style="transform-origin: 100px 110px; transition: transform 0.8s ease;"/>
+              <circle cx="100" cy="110" r="5" fill="#fff"/>
+            </svg>
+            <div class="fgi-value" id="fgiValue">—</div>
+            <div class="fgi-label" id="fgiLabel">—</div>
+          </div>
+          <div class="fgi-history" id="fgiHistory"></div>
+          <div class="fgi-source" id="fgiSource">—</div>
+        </div>
+      </section>
+
       <!-- Trending Panel -->
       <section class="panel trending-panel liquid-glass">
         <div class="trending-header">

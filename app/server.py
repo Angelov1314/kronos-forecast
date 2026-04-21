@@ -534,6 +534,154 @@ def trending():
                 results.append({'symbol': sym, 'name': sym, 'price': 0, 'changePct': 0})
     return jsonify(results)
 
+# ---------- Tavily Search ----------
+import urllib.request, urllib.error, urllib.parse
+
+_TAVILY_CACHE = {}  # { (ticker, kind): (ts, result) }
+_TAVILY_TTL = 900   # seconds
+
+def _tavily_search(query: str, max_results: int = 5, topic: str = "news"):
+    api_key = os.environ.get('TAVILY_API_KEY', '').strip()
+    if not api_key:
+        return {"error": "TAVILY_API_KEY not set on server"}
+    payload = json.dumps({
+        "api_key": api_key,
+        "query": query,
+        "search_depth": "basic",
+        "topic": topic,
+        "max_results": max_results,
+        "include_answer": True,
+    }).encode('utf-8')
+    req = urllib.request.Request(
+        "https://api.tavily.com/search",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        return {"error": f"Tavily HTTP {e.code}: {e.read().decode('utf-8', 'ignore')[:200]}"}
+    except Exception as e:
+        return {"error": f"Tavily request failed: {e}"}
+
+
+@app.route('/api/tavily/<ticker>')
+def tavily_sentiment(ticker):
+    ticker = ticker.upper().strip()
+    kind = request.args.get('kind', 'sentiment')  # 'sentiment' | 'earnings'
+
+    cache_key = (ticker, kind)
+    now = datetime.utcnow().timestamp()
+    cached = _TAVILY_CACHE.get(cache_key)
+    if cached and (now - cached[0]) < _TAVILY_TTL:
+        return jsonify(cached[1])
+
+    # Resolve a human-readable name to improve query quality
+    name = ticker
+    try:
+        info = yf.Ticker(ticker).info
+        name = info.get('longName') or info.get('shortName') or ticker
+    except Exception:
+        pass
+
+    year = datetime.utcnow().year
+    if kind == 'earnings':
+        q = f"{name} ({ticker}) next earnings date {year} analyst expectations"
+    else:
+        q = f"{name} ({ticker}) stock market sentiment news analyst recent"
+
+    data = _tavily_search(q, max_results=6, topic="news")
+    if 'error' in data:
+        return jsonify(data), 502
+
+    summary = (data.get('answer') or '').strip()
+    results = []
+    for r in (data.get('results') or [])[:6]:
+        results.append({
+            'title': r.get('title', '')[:200],
+            'url': r.get('url', ''),
+            'content': (r.get('content') or '')[:320],
+            'published_date': r.get('published_date', ''),
+            'score': r.get('score', 0),
+        })
+
+    out = {
+        'ticker': ticker,
+        'name': name,
+        'kind': kind,
+        'query': q,
+        'summary': summary,
+        'results': results,
+    }
+    _TAVILY_CACHE[cache_key] = (now, out)
+    return jsonify(out)
+
+
+# ---------- Fear & Greed Index ----------
+_FGI_CACHE = {'stocks': (0, None), 'crypto': (0, None)}
+_FGI_TTL = 600  # 10 min
+
+def _fetch_cnn_fgi():
+    """Unofficial CNN Fear & Greed Index endpoint."""
+    url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json",
+    })
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read().decode('utf-8'))
+
+
+def _fetch_alternative_fgi():
+    """alternative.me crypto Fear & Greed."""
+    url = "https://api.alternative.me/fng/?limit=2"
+    with urllib.request.urlopen(url, timeout=10) as resp:
+        return json.loads(resp.read().decode('utf-8'))
+
+
+@app.route('/api/fear-greed')
+def fear_greed():
+    market = request.args.get('market', 'stocks')  # 'stocks' | 'crypto'
+    now = datetime.utcnow().timestamp()
+    cached_ts, cached_val = _FGI_CACHE.get(market, (0, None))
+    if cached_val and (now - cached_ts) < _FGI_TTL:
+        return jsonify(cached_val)
+
+    try:
+        if market == 'crypto':
+            data = _fetch_alternative_fgi()
+            d = (data.get('data') or [{}])[0]
+            prev = (data.get('data') or [{}, {}])[1] if len(data.get('data', [])) > 1 else {}
+            out = {
+                'market': 'crypto',
+                'value': int(d.get('value', 0)),
+                'label': d.get('value_classification', '—'),
+                'previous': int(prev.get('value', 0)) if prev.get('value') else None,
+                'source': 'alternative.me',
+                'updated': d.get('timestamp'),
+            }
+        else:
+            data = _fetch_cnn_fgi()
+            fg = data.get('fear_and_greed') or {}
+            out = {
+                'market': 'stocks',
+                'value': int(round(fg.get('score', 0))),
+                'label': fg.get('rating', '—').title(),
+                'previous_close': int(round(fg.get('previous_close', 0))),
+                'previous_1w': int(round(fg.get('previous_1_week', 0))),
+                'previous_1m': int(round(fg.get('previous_1_month', 0))),
+                'previous_1y': int(round(fg.get('previous_1_year', 0))),
+                'source': 'CNN',
+                'updated': fg.get('timestamp'),
+            }
+    except Exception as e:
+        return jsonify({'error': f'F&G fetch failed: {e}'}), 502
+
+    _FGI_CACHE[market] = (now, out)
+    return jsonify(out)
+
+
 # Serve media files
 @app.route('/media/<path:filename>')
 def media(filename):

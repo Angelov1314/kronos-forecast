@@ -1006,3 +1006,146 @@ body {
   padding-top: 8px;
   border-top: 1px dashed rgba(255,255,255,0.08);
 }
+
+/* ==== Sentiment Panel (Tavily + Fear & Greed) ==== */
+.sentiment-panel {
+  padding: 14px 16px;
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.sentiment-tabs {
+  display: flex; gap: 6px;
+  margin-bottom: 12px;
+}
+.sent-tab {
+  flex: 1;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.55);
+  font-family: 'Outfit', sans-serif;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sent-tab:hover { color: rgba(255,255,255,0.9); }
+.sent-tab.active {
+  background: rgba(224,201,127,0.15);
+  color: #e0c97f;
+  border-color: rgba(224,201,127,0.4);
+}
+.sent-pane { display: none; flex-direction: column; gap: 10px; overflow-y: auto; }
+.sent-pane.active { display: flex; }
+
+.sent-summary {
+  padding: 10px 12px;
+  background: rgba(142,202,230,0.08);
+  border-left: 2px solid rgba(142,202,230,0.5);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.78);
+}
+.sent-err { color: #f08282; font-family: 'DM Mono', monospace; font-size: 11px; }
+
+.sent-results { display: flex; flex-direction: column; gap: 8px; }
+.sent-item {
+  display: block;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.sent-item:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(224,201,127,0.25);
+}
+.sent-title {
+  font-size: 12px; font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 3px;
+  line-height: 1.35;
+}
+.sent-snip {
+  font-size: 11px; line-height: 1.45;
+  color: rgba(255,255,255,0.58);
+  margin-bottom: 5px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sent-meta {
+  display: flex; justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+}
+
+/* ==== F&G Gauge ==== */
+.fgi-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+.fgi-btn {
+  padding: 4px 12px; font-size: 11px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+}
+.fgi-btn.active {
+  background: rgba(142,202,230,0.15);
+  color: #8ecae6;
+  border-color: rgba(142,202,230,0.4);
+}
+.fgi-gauge {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 0 12px;
+}
+.fgi-svg { width: 180px; height: auto; }
+.fgi-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 30px; font-weight: 600;
+  margin-top: -12px;
+  color: #fff;
+}
+.fgi-value.fgi-extreme-fear { color: #f87171; }
+.fgi-value.fgi-fear { color: #e8a66f; }
+.fgi-value.fgi-neutral { color: #e0c97f; }
+.fgi-value.fgi-greed { color: #b5d789; }
+.fgi-value.fgi-extreme-greed { color: #4ade80; }
+
+.fgi-label {
+  font-size: 12px; letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+.fgi-history { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.fgi-row {
+  display: flex; justify-content: space-between;
+  padding: 5px 10px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+}
+.fgi-k { color: rgba(255,255,255,0.5); }
+.fgi-v { color: rgba(255,255,255,0.9); font-weight: 500; }
+.fgi-v.fgi-extreme-fear { color: #f87171; }
+.fgi-v.fgi-fear { color: #e8a66f; }
+.fgi-v.fgi-neutral { color: #e0c97f; }
+.fgi-v.fgi-greed { color: #b5d789; }
+.fgi-v.fgi-extreme-greed { color: #4ade80; }
+
+.fgi-source {
+  text-align: center;
+  font-size: 10px; letter-spacing: 0.4px;
+  color: rgba(255,255,255,0.35);
+  font-family: 'DM Mono', monospace;
+}

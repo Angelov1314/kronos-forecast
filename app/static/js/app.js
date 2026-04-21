@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initControls();
   initAudio();
   initWatchlist();
+  if (document.getElementById('sentimentPanel')) initSentimentPanel();
 });
 
 // ---- Chart Setup ----
@@ -363,6 +364,15 @@ function initMainToolbar() {
 async function loadTicker(ticker) {
   currentTicker = ticker.toUpperCase();
   document.getElementById('tickerSymbol').textContent = currentTicker;
+
+  // Refresh sentiment/earnings for new ticker (if panel exists)
+  if (document.getElementById('sentimentPanel')) {
+    const activeTab = document.querySelector('.sent-tab.active');
+    const kind = activeTab ? activeTab.dataset.sent : 'sentiment';
+    if (kind === 'sentiment' || kind === 'earnings') {
+      loadSentiment(currentTicker, kind);
+    }
+  }
 
   // Clear old overlays
   if (predictionSeries) { chart.removeSeries(predictionSeries); predictionSeries = null; }
@@ -885,4 +895,159 @@ function formatMarketCap(n) {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(0)}M`;
   return `$${n.toLocaleString()}`;
+}
+
+// ============================================================
+// Sentiment (Tavily) + Fear & Greed Index
+// ============================================================
+
+let _sentCache = { sentiment: null, earnings: null };
+let _fgiCache = { stocks: null, crypto: null };
+
+function initSentimentPanel() {
+  // Tab switching
+  document.querySelectorAll('.sent-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.sent;
+      document.querySelectorAll('.sent-tab').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.sent-pane').forEach(p => p.classList.remove('active'));
+      const pane = document.getElementById('sentPane' + k.charAt(0).toUpperCase() + k.slice(1));
+      if (pane) pane.classList.add('active');
+
+      if (k === 'sentiment') loadSentiment(currentTicker, 'sentiment');
+      else if (k === 'earnings') loadSentiment(currentTicker, 'earnings');
+      else if (k === 'fgi') loadFgi('stocks');
+    });
+  });
+
+  // F&G market toggle
+  document.querySelectorAll('.fgi-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = btn.dataset.fgi;
+      document.querySelectorAll('.fgi-btn').forEach(b => b.classList.toggle('active', b === btn));
+      loadFgi(m);
+    });
+  });
+
+  // Pre-load
+  loadSentiment(currentTicker, 'sentiment');
+}
+
+async function loadSentiment(ticker, kind) {
+  const cacheKey = kind;
+  const summaryEl = document.getElementById(kind === 'earnings' ? 'earnSummary' : 'sentSummary');
+  const resultsEl = document.getElementById(kind === 'earnings' ? 'earnResults' : 'sentResults');
+  if (!summaryEl || !resultsEl) return;
+
+  const zh = (typeof LANG !== 'undefined' && LANG === 'zh');
+  summaryEl.textContent = zh ? '正在搜索...' : 'Searching...';
+  resultsEl.innerHTML = '';
+
+  try {
+    const res = await fetch(`${API}/api/tavily/${encodeURIComponent(ticker)}?kind=${kind}`);
+    const data = await res.json();
+    if (data.error) {
+      summaryEl.innerHTML = `<span class="sent-err">${data.error}</span>`;
+      return;
+    }
+    _sentCache[cacheKey] = data;
+
+    summaryEl.textContent = data.summary || (zh ? '（无综合摘要）' : '(no summary)');
+    const frag = document.createDocumentFragment();
+    (data.results || []).forEach(r => {
+      const a = document.createElement('a');
+      a.className = 'sent-item';
+      a.href = r.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.innerHTML = `
+        <div class="sent-title">${escapeHtml(r.title)}</div>
+        <div class="sent-snip">${escapeHtml(r.content)}</div>
+        <div class="sent-meta">
+          <span class="sent-date">${r.published_date ? escapeHtml(r.published_date.slice(0, 10)) : ''}</span>
+          <span class="sent-host">${escapeHtml(hostOf(r.url))}</span>
+        </div>
+      `;
+      frag.appendChild(a);
+    });
+    resultsEl.appendChild(frag);
+  } catch (e) {
+    summaryEl.textContent = (zh ? '加载失败: ' : 'Load failed: ') + e;
+  }
+}
+
+async function loadFgi(market) {
+  const needleEl = document.getElementById('fgiNeedle');
+  const valEl = document.getElementById('fgiValue');
+  const labelEl = document.getElementById('fgiLabel');
+  const histEl = document.getElementById('fgiHistory');
+  const srcEl = document.getElementById('fgiSource');
+  if (!needleEl) return;
+
+  const zh = (typeof LANG !== 'undefined' && LANG === 'zh');
+  valEl.textContent = '—';
+  labelEl.textContent = zh ? '加载中...' : 'Loading...';
+
+  try {
+    const res = await fetch(`${API}/api/fear-greed?market=${market}`);
+    const data = await res.json();
+    if (data.error) {
+      labelEl.textContent = data.error;
+      return;
+    }
+    _fgiCache[market] = data;
+
+    const v = Math.max(0, Math.min(100, data.value || 0));
+    // Needle: value 0 = -90deg, 100 = +90deg
+    const rot = (v / 100) * 180 - 90;
+    needleEl.style.transform = `rotate(${rot}deg)`;
+    valEl.textContent = v;
+
+    // Colorize value
+    valEl.className = 'fgi-value ' + fgiColorClass(v);
+    labelEl.textContent = (zh ? fgiLabelZh(v) : data.label) + (data.label && zh ? ` · ${data.label}` : '');
+
+    // History rows
+    histEl.innerHTML = '';
+    const rows = [];
+    if (market === 'stocks') {
+      if (data.previous_close != null) rows.push([zh ? '昨日' : 'Prev Close', data.previous_close]);
+      if (data.previous_1w != null) rows.push([zh ? '一周前' : '1 Week', data.previous_1w]);
+      if (data.previous_1m != null) rows.push([zh ? '一月前' : '1 Month', data.previous_1m]);
+      if (data.previous_1y != null) rows.push([zh ? '一年前' : '1 Year', data.previous_1y]);
+    } else {
+      if (data.previous != null) rows.push([zh ? '昨日' : 'Yesterday', data.previous]);
+    }
+    rows.forEach(([k, val]) => {
+      const row = document.createElement('div');
+      row.className = 'fgi-row';
+      row.innerHTML = `<span class="fgi-k">${k}</span><span class="fgi-v ${fgiColorClass(val)}">${val}</span>`;
+      histEl.appendChild(row);
+    });
+
+    srcEl.textContent = `Source: ${data.source || '—'}`;
+  } catch (e) {
+    labelEl.textContent = (zh ? '加载失败' : 'Load failed') + ': ' + e;
+  }
+}
+
+function fgiColorClass(v) {
+  if (v < 25) return 'fgi-extreme-fear';
+  if (v < 45) return 'fgi-fear';
+  if (v < 55) return 'fgi-neutral';
+  if (v < 75) return 'fgi-greed';
+  return 'fgi-extreme-greed';
+}
+function fgiLabelZh(v) {
+  if (v < 25) return '极度恐惧';
+  if (v < 45) return '恐惧';
+  if (v < 55) return '中性';
+  if (v < 75) return '贪婪';
+  return '极度贪婪';
+}
+function hostOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch (_) { return ''; }
+}
+function escapeHtml(s) {
+  return (s || '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
 }
