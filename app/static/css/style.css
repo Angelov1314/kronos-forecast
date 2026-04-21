@@ -910,16 +910,13 @@ body {
   border-top: 1px dashed rgba(255,255,255,0.08);
 }
 
-/* ==== 神奇九转 Banner (bottom-right chart overlay) ==== */
-.chart-panel { position: relative; }
-.chart-container { position: relative; }
+/* ==== 神奇九转 Banner (bottom of right ticker column) ==== */
+.ticker-panel { display: flex; flex-direction: column; }
+.ticker-panel .jz-banner { margin-top: auto; }
 .jz-banner {
-  position: absolute;
-  right: 80px;
-  bottom: 12px;
-  z-index: 14;
-  min-width: 260px;
-  max-width: 320px;
+  position: relative;
+  margin-top: 14px;
+  width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(15,22,34,0.85) 0%, rgba(10,15,24,0.92) 100%);

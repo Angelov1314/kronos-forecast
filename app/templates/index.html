@@ -102,6 +102,26 @@
           <div class="stat"><span class="stat-label" data-i18n="wk52L">52w L</span><span class="stat-value" id="stat52L">—</span></div>
           <div class="stat"><span class="stat-label" data-i18n="sector">Sector</span><span class="stat-value" id="statSector">—</span></div>
         </div>
+        <!-- 神奇九转 交易建议 Banner (bottom of right column, toggled with 九转) -->
+        <div class="jz-banner" id="jzBanner" style="display:none">
+          <div class="jz-banner-head">
+            <span class="jz-banner-title">九转 · <span id="jzBannerKind">—</span></span>
+            <span class="jz-banner-action" id="jzBannerAction">—</span>
+          </div>
+          <div class="jz-banner-row">
+            <span class="jz-k">现价</span>
+            <span class="jz-v" id="jzBannerPrice">—</span>
+            <span class="jz-k">ATR14</span>
+            <span class="jz-v" id="jzBannerAtr">—</span>
+          </div>
+          <div class="jz-banner-grid">
+            <div class="jz-cell"><div class="jz-cell-t">1日目标</div><div class="jz-cell-v" id="jzTp1">—</div></div>
+            <div class="jz-cell"><div class="jz-cell-t">3日目标</div><div class="jz-cell-v" id="jzTp3">—</div></div>
+            <div class="jz-cell"><div class="jz-cell-t">7日目标</div><div class="jz-cell-v" id="jzTp7">—</div></div>
+            <div class="jz-cell jz-sl"><div class="jz-cell-t">止损</div><div class="jz-cell-v" id="jzSl">—</div></div>
+          </div>
+          <div class="jz-banner-note" id="jzBannerNote">—</div>
+        </div>
       </section>
 
       <!-- Chart Panel -->
@@ -149,28 +169,7 @@
           </div>
         </div>
 
-        <div id="chartContainer" class="chart-container">
-        <!-- 神奇九转 交易建议 Banner (bottom-right of chart, toggled with 九转) -->
-        <div class="jz-banner" id="jzBanner" style="display:none">
-          <div class="jz-banner-head">
-            <span class="jz-banner-title">九转 · <span id="jzBannerKind">—</span></span>
-            <span class="jz-banner-action" id="jzBannerAction">—</span>
-          </div>
-          <div class="jz-banner-row">
-            <span class="jz-k">现价</span>
-            <span class="jz-v" id="jzBannerPrice">—</span>
-            <span class="jz-k">ATR14</span>
-            <span class="jz-v" id="jzBannerAtr">—</span>
-          </div>
-          <div class="jz-banner-grid">
-            <div class="jz-cell"><div class="jz-cell-t">1日目标</div><div class="jz-cell-v" id="jzTp1">—</div></div>
-            <div class="jz-cell"><div class="jz-cell-t">3日目标</div><div class="jz-cell-v" id="jzTp3">—</div></div>
-            <div class="jz-cell"><div class="jz-cell-t">7日目标</div><div class="jz-cell-v" id="jzTp7">—</div></div>
-            <div class="jz-cell jz-sl"><div class="jz-cell-t">止损</div><div class="jz-cell-v" id="jzSl">—</div></div>
-          </div>
-          <div class="jz-banner-note" id="jzBannerNote">—</div>
-        </div>
-        </div><!-- /#chartContainer -->
+        <div id="chartContainer" class="chart-container"></div>
         <div class="chart-watermark">KRONOS</div>
         <div class="jiuzhuan-card" id="jiuzhuanCard" style="display:none">
           <div class="jz-head">
