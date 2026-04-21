@@ -918,11 +918,15 @@ body {
   margin-top: 14px;
   width: 100%;
   padding: 12px 14px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(15,22,34,0.85) 0%, rgba(10,15,24,0.92) 100%);
-  border: 1px solid rgba(224, 201, 127, 0.22);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-  backdrop-filter: blur(18px);
+  border-radius: var(--radius);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.3);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.3);
+  box-shadow:
+    inset 0 1px 1px var(--glass-highlight),
+    inset 0 -1px 0 rgba(255,255,255,0.02),
+    0 8px 32px rgba(0,0,0,0.3),
+    0 0 0 1px var(--glass-border);
   font-family: 'Outfit', sans-serif;
   color: rgba(255,255,255,0.85);
   pointer-events: auto;
